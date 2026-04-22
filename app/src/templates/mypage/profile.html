@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}마이페이지{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="eyebrow">Profile</p>
+  <h1>{{ profile.display_name }}</h1>
+  <div class="price-lg">{{ "{:,}".format(profile.balance) }}원</div>
+  <p class="subtle">@{{ profile.username }} · {{ profile.role }}</p>
+</section>
+{% endblock %}

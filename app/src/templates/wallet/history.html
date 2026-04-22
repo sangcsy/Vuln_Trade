@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}송금 내역{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">Wallet</p>
+    <h1>송금 내역</h1>
+  </div>
+</section>
+<div class="feed-list">
+  {% for tx in transactions %}
+    <div class="feed-item">
+      <strong>{{ tx.type }}</strong>
+      <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+      <div class="meta-row">
+        <span>{{ tx.actor_name or '-' }}</span>
+        <span>{{ tx.target_name or '-' }}</span>
+        <span>{{ "{:,}".format(tx.amount) }}원</span>
+      </div>
+      <p class="subtle">{{ tx.note or '' }}</p>
+    </div>
+  {% else %}
+    <p class="empty">송금 내역이 없습니다.</p>
+  {% endfor %}
+</div>
+{% endblock %}

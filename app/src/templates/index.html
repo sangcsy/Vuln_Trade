@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}홈 - Vuln Trade{% endblock %}
+{% block content %}
+<section class="ticker-row" data-home-stocks>
+  {% for stock in stocks[:5] %}
+    <a class="ticker-card" href="{{ stock.detail_url }}" data-ticker-card data-stock-id="{{ stock.id }}">
+      <div>
+        <strong data-ticker-name>{{ stock.name }}</strong>
+        <p data-ticker-symbol>{{ stock.symbol }}</p>
+      </div>
+      <div class="ticker-value">
+        <strong data-ticker-price>{{ "{:,}".format(stock.current_price) }}원</strong>
+        <span class="{{ 'up' if stock.change_amount >= 0 else 'down' }}" data-ticker-rate>
+          {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
+        </span>
+      </div>
+    </a>
+  {% endfor %}
+</section>
+
+<section class="market-layout">
+  <div class="card market-board">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">실시간 차트</p>
+        <h1>지금 뜨는 카테고리</h1>
+      </div>
+    </div>
+    <div class="market-tabs">
+      <span class="active">전체</span>
+      <span>국내</span>
+      <span>은행</span>
+      <span>자동차</span>
+    </div>
+    <div class="market-list" data-market-list>
+      {% for stock in stocks %}
+        <a
+          class="market-row {% if loop.first %}is-active{% endif %}"
+          href="{{ stock.detail_url }}"
+          data-stock-preview='{{ stock.preview_json|safe }}'
+          data-market-row
+          data-stock-id="{{ stock.id }}"
+        >
+          <div class="market-rank">{{ loop.index }}</div>
+          <div class="market-name">
+            <strong data-market-name>{{ stock.name }}</strong>
+            <p data-market-symbol>{{ stock.symbol }}</p>
+          </div>
+          <div class="market-price" data-market-price>{{ "{:,}".format(stock.current_price) }}원</div>
+          <div class="{{ 'up' if stock.change_amount >= 0 else 'down' }}" data-market-rate>
+            {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card preview-panel">
+    {% if preview_stock %}
+      <div class="preview-header">
+        <div>
+          <p class="eyebrow" data-preview-symbol>{{ preview_stock.symbol }}</p>
+          <h2 data-preview-name>{{ preview_stock.name }}</h2>
+          <div class="price-lg" data-preview-price>{{ "{:,}".format(preview_stock.current_price) }}원</div>
+          <p class="{{ 'up' if preview_stock.change_amount >= 0 else 'down' }}" data-preview-change>
+            {{ '+' if preview_stock.change_amount >= 0 else '' }}{{ "{:,}".format(preview_stock.change_amount) }}원
+            ({{ "%.2f"|format(preview_stock.change_rate) }}%)
+          </p>
+        </div>
+        <a class="button ghost inline-btn preview-link-btn" data-preview-link href="{{ preview_stock.detail_url }}">자세히 보기</a>
+      </div>
+      <div class="chart-wrap preview-chart-wrap">
+        <canvas
+          id="home-preview-chart"
+          width="520"
+          height="320"
+          data-home-preview-chart
+          data-preview-payload='{{ preview_stock.preview_json|safe }}'
+        ></canvas>
+      </div>
+      <div class="preview-copy">
+        <h3>왜 움직였을까?</h3>
+        <p>메인 화면도 5초마다 시세와 차트가 다시 갱신됩니다. 마우스를 올리면 미리보기 차트가 바뀌고, 클릭하면 상세 차트와 매수/매도로 이어집니다.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <aside class="card account-sidebar">
+    {% if current_user %}
+      <p class="eyebrow">내 계좌</p>
+      <div class="account-currency">
+        <div>
+          <span>예수금</span>
+          <strong data-cash-balance>{{ "{:,}".format(cash_balance) }}원</strong>
+        </div>
+        <div>
+          <span>평가금</span>
+          <strong data-stock-balance>{{ "{:,}".format(total_stock_value) }}원</strong>
+        </div>
+      </div>
+      <div class="account-total">
+        <span>내 투자</span>
+        <strong data-total-assets>{{ "{:,}".format(total_assets) }}원</strong>
+      </div>
+
+      <div class="sidebar-block">
+        <div class="sidebar-head">
+          <h3>보유 종목</h3>
+          <a href="{{ url_for('stocks.portfolio') }}">전체</a>
+        </div>
+        <div class="account-list" data-account-list>
+          {% for item in account_stocks %}
+            <a class="account-row" href="{{ url_for('stocks.stock_detail', stock_id=item.id) }}" data-account-row>
+              <div>
+                <strong data-account-name>{{ item.name }}</strong>
+                <p data-account-qty>{{ item.quantity }}주</p>
+              </div>
+              <div class="account-metrics">
+                <strong data-account-value>{{ "{:,}".format(item.current_value) }}원</strong>
+                <span class="{{ 'up' if item.profit >= 0 else 'down' }}" data-account-profit>
+                  {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}원
+                </span>
+              </div>
+            </a>
+          {% else %}
+            <p class="empty">보유 종목이 없습니다.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sidebar-block">
+        <div class="sidebar-head">
+          <h3>주문 내역</h3>
+          <a href="{{ url_for('stocks.trade_history', user_id=current_user.id) }}">전체</a>
+        </div>
+        <div class="order-list" data-order-list>
+          {% for tx in recent_transactions %}
+            <div class="order-row" data-order-row>
+              <strong data-order-type>{{ tx.display_type }}</strong>
+              <p data-order-meta>{{ tx.symbol or tx.note or '-' }}</p>
+            </div>
+          {% else %}
+            <p class="empty">대기 중인 주문이 없습니다.</p>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <p class="eyebrow">내 계좌</p>
+      <div class="account-total guest">
+        <span>로그인 후 내 자산을 확인하세요</span>
+        <a class="button primary inline-btn" href="{{ url_for('auth.login') }}">로그인</a>
+      </div>
+    {% endif %}
+  </aside>
+</section>
+
+<script id="market-snapshot-endpoint" type="application/json">{{ url_for('main.market_snapshot') }}</script>
+
+<section class="card feed-section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">커뮤니티 피드</p>
+      <h2>최근 게시글</h2>
+    </div>
+    <a href="{{ url_for('community.list_posts') }}">피드 전체 보기</a>
+  </div>
+  <div class="feed-grid">
+    {% for post in recent_posts %}
+      <a class="feed-card" href="{{ url_for('community.detail', post_id=post.id) }}">
+        <strong>{{ post.title }}</strong>
+        <p>{{ post.display_name }} · {{ post.created_at.strftime('%m.%d %H:%M') }}</p>
+        <div class="feed-preview">{{ post.content[:140] }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

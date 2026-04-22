@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}송금{% endblock %}
+{% block content %}
+<section class="transfer-shell">
+  <div class="card transfer-intro">
+    <p class="eyebrow">간편 송금</p>
+    <h1>잔액 보내기</h1>
+    <p class="subtle">같은 플랫폼 사용자에게 바로 송금할 수 있습니다.</p>
+    <div class="quick-actions">
+      <a class="button ghost inline-btn" href="{{ url_for('wallet.history', user_id=current_user.id) }}">송금 내역</a>
+      <a class="button ghost inline-btn" href="{{ url_for('main.profile', user_id=current_user.id) }}">내 자산 보기</a>
+    </div>
+  </div>
+
+  <form method="post" class="card form-card transfer-form">
+    <label>받는 사람</label>
+    <select name="target_user_id">
+      {% for user in users %}
+        <option value="{{ user.id }}">{{ user.display_name }} ({{ user.username }})</option>
+      {% endfor %}
+    </select>
+    <label>금액</label>
+    <input type="number" name="amount" value="10000">
+    <label>메모</label>
+    <input type="text" name="note" placeholder="예: 스터디 정산">
+    <button type="submit" class="button primary">송금하기</button>
+  </form>
+</section>
+{% endblock %}

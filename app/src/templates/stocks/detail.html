@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ stock.name }}{% endblock %}
+{% block content %}
+<section class="detail-shell">
+  <div class="detail-main">
+    <div class="card detail-hero">
+      <div class="hero-headline">
+        <div>
+          <p class="eyebrow">{{ stock.symbol }}</p>
+          <h1>{{ stock.name }}</h1>
+        </div>
+        <div class="stat-badge">실시간 갱신</div>
+      </div>
+      <div class="price-xl" data-live-price>{{ "{:,}".format(stock.current_price) }}원</div>
+      <p class="{{ 'up' if stock.change_amount >= 0 else 'down' }}" data-live-change>
+        {{ '+' if stock.change_amount >= 0 else '' }}{{ "{:,}".format(stock.change_amount) }}원
+        ({{ "%.2f"|format(stock.change_rate) }}%)
+      </p>
+      {% if holding %}
+        <p class="subtle">보유 {{ holding.quantity }}주 · 평균 단가 {{ "{:,}".format(holding.avg_price) }}원</p>
+      {% else %}
+        <p class="subtle">현재 보유 중인 수량은 없습니다.</p>
+      {% endif %}
+    </div>
+
+    <div class="card chart-panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">실시간 시세 흐름</p>
+          <h2>가격 차트</h2>
+        </div>
+        <span class="muted">5초마다 새로 반영됩니다</span>
+      </div>
+      <div class="chart-summary">
+        <div>
+          <span>직전 기준가</span>
+          <strong data-live-base>{{ "{:,}".format(stock.previous_price) }}원</strong>
+        </div>
+        <div>
+          <span>현재가</span>
+          <strong data-live-price-inline>{{ "{:,}".format(stock.current_price) }}원</strong>
+        </div>
+        <div>
+          <span>변동률</span>
+          <strong class="{{ 'up' if stock.change_amount >= 0 else 'down' }}" data-live-rate>
+            {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
+          </strong>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas
+          id="stock-detail-chart"
+          width="920"
+          height="380"
+          data-stock-chart
+          data-endpoint="{{ url_for('stocks.chart_data', stock_id=stock.id) }}"
+        ></canvas>
+      </div>
+    </div>
+  </div>
+
+  <aside class="detail-side">
+    <form method="post" class="card form-card trade-card">
+      <h2 class="up">매수</h2>
+      <p class="subtle">총액은 서버에서 재검증하지 않습니다.</p>
+      <input type="hidden" name="action" value="buy">
+      <label>수량</label>
+      <input type="number" name="quantity" min="1" value="1">
+      <label>총액</label>
+      <input type="number" name="total_price" value="{{ stock.current_price }}">
+      <button type="submit" class="button primary">매수하기</button>
+    </form>
+
+    <form method="post" class="card form-card trade-card">
+      <h2 class="down">매도</h2>
+      <p class="subtle">요청 값 기준으로 거래가 반영됩니다.</p>
+      <input type="hidden" name="action" value="sell">
+      <label>수량</label>
+      <input type="number" name="quantity" min="1" value="1">
+      <label>총액</label>
+      <input type="number" name="total_price" value="{{ stock.current_price }}">
+      <button type="submit" class="button dark">매도하기</button>
+    </form>
+  </aside>
+</section>
+{% endblock %}

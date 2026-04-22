@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Vuln Trade{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <div class="brand-wrap">
+          <a class="brand" href="{{ url_for('main.index') }}">
+            <span class="brand-mark">VT</span>
+            <span>Vuln Trade</span>
+          </a>
+          <nav class="nav">
+            <a href="{{ url_for('main.index') }}">홈</a>
+            <a href="{{ url_for('community.list_posts') }}">피드</a>
+            {% if current_user %}
+              <a href="{{ url_for('wallet.transfer') }}">송금</a>
+              <a href="{{ url_for('stocks.portfolio') }}">내 계좌</a>
+            {% endif %}
+          </nav>
+        </div>
+        <div class="top-actions">
+          <form class="search-shell" action="{{ url_for('admin.users') }}" method="get">
+            <input type="text" name="q" placeholder="종목 또는 사용자를 검색하세요">
+          </form>
+          {% if current_user %}
+            <a class="button ghost inline-btn" href="{{ url_for('main.profile', user_id=current_user.id) }}">{{ current_user.display_name }}</a>
+            {% if current_user.role == 'admin' %}
+              <a class="button ghost inline-btn" href="{{ url_for('admin.dashboard') }}">관리</a>
+            {% endif %}
+            <a class="button primary inline-btn" href="{{ url_for('auth.logout') }}">로그아웃</a>
+          {% else %}
+            <a class="button ghost inline-btn" href="{{ url_for('auth.register') }}">회원가입</a>
+            <a class="button primary inline-btn" href="{{ url_for('auth.login') }}">로그인</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <main class="container page">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-wrap">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

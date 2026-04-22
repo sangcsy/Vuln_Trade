@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}User Directory{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>User Directory</h1>
+  </div>
+</section>
+
+<section class="card">
+  <form method="get" class="form-card compact">
+    <label>Search user</label>
+    <input type="text" name="q" value="{{ q or '' }}" placeholder="username or display name">
+    <button type="submit" class="button primary inline-btn">Search</button>
+  </form>
+</section>
+
+<div class="feed">
+  {% for user in users %}
+    <div class="feed-item">
+      <strong>{{ user.display_name }} ({{ user.username }})</strong>
+      <div class="meta-row">
+        <span>ID {{ user.id }}</span>
+        <span>{{ user.role }}</span>
+        <span>{{ "{:,}".format(user.balance) }}원</span>
+      </div>
+    </div>
+  {% else %}
+    <p class="empty">No users found.</p>
+  {% endfor %}
+</div>
+{% endblock %}

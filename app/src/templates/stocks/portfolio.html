@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}포트폴리오{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">Portfolio</p>
+    <h1>보유 종목</h1>
+  </div>
+</section>
+<div class="watch-grid">
+  {% for item in holdings %}
+    <div class="watch-card">
+      <p>{{ item.symbol }}</p>
+      <strong>{{ item.name }}</strong>
+      <div class="price-lg">{{ "{:,}".format(item.current_price * item.quantity) }}원</div>
+      <span>{{ item.quantity }}주 · 평균 {{ "{:,}".format(item.avg_price) }}원</span>
+    </div>
+  {% else %}
+    <p class="empty">보유 종목이 없습니다.</p>
+  {% endfor %}
+</div>
+{% endblock %}

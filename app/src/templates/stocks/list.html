@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}주식 둘러보기{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">실시간 시세</p>
+    <h1>주식 둘러보기</h1>
+  </div>
+</section>
+
+<section class="card board-card">
+  <div class="rank-list rank-list-wide">
+    {% for stock in stocks %}
+      <a class="rank-row rank-row-wide" href="{{ url_for('stocks.stock_detail', stock_id=stock.id) }}">
+        <div class="rank-main">
+          <span class="rank-number">{{ loop.index }}</span>
+          <div>
+            <strong>{{ stock.name }}</strong>
+            <p>{{ stock.symbol }}</p>
+          </div>
+        </div>
+        <div class="rank-price-block">
+          <strong>{{ "{:,}".format(stock.current_price) }}원</strong>
+          <span class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
+            {{ '+' if stock.change_amount >= 0 else '' }}{{ "{:,}".format(stock.change_amount) }}원
+          </span>
+        </div>
+        <div class="rank-price-block">
+          <strong class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
+            {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
+          </strong>
+          <span class="muted">최근 30틱</span>
+        </div>
+        <canvas class="sparkline wide" width="160" height="44" data-values="{{ stock.history_prices|join(',') }}"></canvas>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

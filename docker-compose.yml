@@ -1,0 +1,70 @@
+services:
+  web:
+    build:
+      context: ./nginx
+    depends_on:
+      - app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app/src/static:/app/static
+    networks:
+      - vulntrade-net
+
+  app:
+    build:
+      context: ./app
+    env_file:
+      - .env.example
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app/src/static/uploads:/app/src/static/uploads
+    networks:
+      - vulntrade-net
+
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    env_file:
+      - .env.example
+    environment:
+      MYSQL_DATABASE: vulntrade
+      MYSQL_USER: vulntrade
+      MYSQL_PASSWORD: vulntrade123
+      MYSQL_ROOT_PASSWORD: root123
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - vulntrade-net
+
+  scheduler:
+    build:
+      context: ./scheduler
+    env_file:
+      - .env.example
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vulntrade-net
+
+volumes:
+  db-data:
+
+networks:
+  vulntrade-net:
+    driver: bridge

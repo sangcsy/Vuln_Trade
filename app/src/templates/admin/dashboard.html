@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}관리자 대시보드{% endblock %}
+{% block content %}
+<section class="grid two">
+  <div class="card metric-card">
+    <p class="eyebrow">Users</p>
+    <h1>{{ users_count }}</h1>
+  </div>
+  <div class="card metric-card">
+    <p class="eyebrow">Posts</p>
+    <h1>{{ posts_count }}</h1>
+  </div>
+  <div class="card metric-card">
+    <p class="eyebrow">Transactions</p>
+    <h1>{{ tx_count }}</h1>
+  </div>
+  <div class="card metric-card">
+    <p class="eyebrow">Total Balance</p>
+    <h1>{{ "{:,}".format(total_balance) }}원</h1>
+  </div>
+</section>
+
+<section class="grid two">
+  <a class="card row-link" href="{{ url_for('admin.users') }}">
+    <strong>사용자 관리</strong>
+    <p class="subtle">가입 사용자와 권한 확인</p>
+  </a>
+  <a class="card row-link" href="{{ url_for('admin.transactions') }}">
+    <strong>거래 내역</strong>
+    <p class="subtle">전체 거래와 송금 흐름</p>
+  </a>
+  <a class="card row-link" href="{{ url_for('admin.posts') }}">
+    <strong>게시글 관리</strong>
+    <p class="subtle">커뮤니티 게시물 확인</p>
+  </a>
+</section>
+{% endblock %}

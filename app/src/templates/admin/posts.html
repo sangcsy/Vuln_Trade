@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}게시글 관리{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>게시글 관리</h1>
+  </div>
+</section>
+<div class="feed">
+  {% for post in posts %}
+    <a class="feed-item" href="{{ url_for('community.detail', post_id=post.id) }}">
+      <strong>{{ post.title }}</strong>
+      <p>{{ post.display_name }} · {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}
