@@ -64,13 +64,13 @@ def search_stocks():
     db = get_db()
     with db.cursor() as cursor:
         if q:
-            query = f"""
-            SELECT id, name, symbol, current_price, updated_at
-            FROM stocks
-            WHERE name LIKE '%{q}%'
-               OR symbol LIKE '%{q}%'
-            ORDER BY current_price DESC, id
-            """
+            query = (
+                f"SELECT id, name, symbol, current_price, updated_at "
+                f"FROM stocks "
+                f"WHERE name LIKE '%{q}%' "
+                f"OR symbol LIKE '%{q}%' "
+                f"ORDER BY current_price DESC, id"
+            )
             cursor.execute(query)
         else:
             cursor.execute("SELECT id, name, symbol, current_price, updated_at FROM stocks ORDER BY current_price DESC, id")
