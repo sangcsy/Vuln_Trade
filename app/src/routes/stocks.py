@@ -55,7 +55,27 @@ def list_stocks():
     with db.cursor() as cursor:
         cursor.execute("SELECT * FROM stocks ORDER BY current_price DESC")
         stocks = attach_market_data(cursor, cursor.fetchall())
-    return render_template("stocks/list.html", stocks=stocks)
+    return render_template("stocks/list.html", stocks=stocks, search_query="")
+
+
+@stocks_bp.route("/search")
+def search_stocks():
+    q = request.args.get("q", "").strip()
+    db = get_db()
+    with db.cursor() as cursor:
+        if q:
+            query = f"""
+            SELECT id, name, symbol, current_price, updated_at
+            FROM stocks
+            WHERE name LIKE '%{q}%'
+               OR symbol LIKE '%{q}%'
+            ORDER BY current_price DESC, id
+            """
+            cursor.execute(query)
+        else:
+            cursor.execute("SELECT id, name, symbol, current_price, updated_at FROM stocks ORDER BY current_price DESC, id")
+        stocks = attach_market_data(cursor, cursor.fetchall())
+    return render_template("stocks/list.html", stocks=stocks, search_query=q)
 
 
 @stocks_bp.route("/<int:stock_id>", methods=["GET", "POST"])

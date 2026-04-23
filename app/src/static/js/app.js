@@ -131,12 +131,13 @@ function setRangeButtons(group, activeRange) {
   });
 }
 
-function bindChartTooltip(canvas, payload, points) {
+function bindChartTooltip(canvas, payload, points, redraw) {
   if (!canvas || !points || points.length === 0) return;
 
   const state = getChartState(canvas);
   state.payload = payload;
   state.points = points;
+  state.redraw = redraw;
 
   if (state.bound) return;
   state.bound = true;
@@ -161,7 +162,9 @@ function bindChartTooltip(canvas, payload, points) {
       }
     });
 
-    drawDetailChart(canvas, current.payload, nearestIndex);
+    if (typeof current.redraw === "function") {
+      current.redraw(canvas, current.payload, nearestIndex);
+    }
 
     const label = current.payload.labels?.[nearestIndex] || formatClock(current.payload.timestamps?.[nearestIndex], true);
     const price = current.payload.prices?.[nearestIndex] || 0;
@@ -175,7 +178,9 @@ function bindChartTooltip(canvas, payload, points) {
     const tooltip = getTooltip();
     tooltip.style.opacity = "0";
     const current = getChartState(canvas);
-    drawDetailChart(canvas, current.payload);
+    if (typeof current.redraw === "function") {
+      current.redraw(canvas, current.payload);
+    }
   });
 }
 
@@ -227,7 +232,10 @@ function drawLineChart(canvas, values, labels = []) {
       prices: values,
       labels,
     },
-    points
+    points,
+    (targetCanvas, currentPayload) => {
+      drawLineChart(targetCanvas, currentPayload.prices || [], currentPayload.labels || []);
+    }
   );
 }
 
@@ -315,7 +323,7 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
     ctx.fill();
   }
 
-  bindChartTooltip(canvas, payload, points);
+  bindChartTooltip(canvas, payload, points, drawDetailChart);
 }
 
 function renderManagedChart(canvas, rawPayload) {

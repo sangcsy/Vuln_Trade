@@ -78,6 +78,10 @@ def write():
 
             upload = request.files.get("attachment")
             saved = save_upload(upload)
+            if saved and saved.get("error"):
+                db.rollback()
+                flash(saved["error"], "error")
+                return render_template("community/write.html", title=title, content=content)
             if saved:
                 cursor.execute(
                     """

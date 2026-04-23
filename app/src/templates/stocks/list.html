@@ -4,8 +4,11 @@
 <section class="section-head">
   <div>
     <p class="eyebrow">실시간 시세</p>
-    <h1>주식 둘러보기</h1>
+    <h1>{% if search_query %}"{{ search_query }}" 검색 결과{% else %}주식 둘러보기{% endif %}</h1>
   </div>
+  {% if search_query %}
+    <a class="button ghost inline-btn action-chip" href="{{ url_for('stocks.list_stocks') }}">전체 보기</a>
+  {% endif %}
 </section>
 
 <section class="card board-card">
@@ -29,10 +32,12 @@
           <strong class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
             {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
           </strong>
-          <span class="muted">최근 30틱</span>
+          <span class="muted">최근 흐름</span>
         </div>
         <canvas class="sparkline wide" width="160" height="44" data-values="{{ stock.history_prices|join(',') }}"></canvas>
       </a>
+    {% else %}
+      <p class="empty">검색된 종목이 없습니다.</p>
     {% endfor %}
   </div>
 </section>

@@ -5,11 +5,12 @@
   <h1>새 글 작성</h1>
   <form method="post" enctype="multipart/form-data" class="form-card">
     <label>제목</label>
-    <input type="text" name="title">
+    <input type="text" name="title" value="{{ title or '' }}">
     <label>본문</label>
-    <textarea name="content" rows="10"></textarea>
+    <textarea name="content" rows="10">{{ content or '' }}</textarea>
     <label>첨부 파일</label>
     <input type="file" name="attachment">
+    <p class="subtle">jpg 또는 png 파일만 업로드할 수 있습니다.</p>
     <div class="form-actions">
       <button type="submit" class="button primary inline-btn action-chip">등록하기</button>
     </div>

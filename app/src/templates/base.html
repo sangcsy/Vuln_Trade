@@ -24,8 +24,8 @@
           </nav>
         </div>
         <div class="top-actions">
-          <form class="search-shell" action="{{ url_for('admin.users') }}" method="get">
-            <input type="text" name="q" placeholder="종목 또는 사용자를 검색하세요">
+          <form class="search-shell" action="{{ url_for('stocks.search_stocks') }}" method="get">
+            <input type="text" name="q" placeholder="종목을 검색하세요">
           </form>
           {% if current_user %}
             <a class="button ghost inline-btn" href="{{ url_for('main.profile', user_id=current_user.id) }}">{{ current_user.display_name }}</a>
