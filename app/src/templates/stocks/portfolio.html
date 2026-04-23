@@ -1,12 +1,27 @@
 {% extends "base.html" %}
-{% block title %}내 주식{% endblock %}
+{% block title %}My Stocks{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
     <p class="eyebrow">Portfolio</p>
-    <h1>내 주식</h1>
+    <h1>&#45236; &#51452;&#49885;</h1>
   </div>
 </section>
+
+<section class="chart-filter-bar">
+  <div>
+    <p class="eyebrow">&#52264;&#53944; &#44036;&#44201;</p>
+    <h2>&#45236; &#51452;&#49885; &#52264;&#53944; &#49884;&#44036; &#45800;&#50948;</h2>
+  </div>
+  <div class="chart-control-row" data-mini-range-group data-target-selector="[data-portfolio-chart]" data-default-range="10">
+    <button type="button" class="range-pill is-active" data-chart-range="10">10&#52488;</button>
+    <button type="button" class="range-pill" data-chart-range="30">30&#52488;</button>
+    <button type="button" class="range-pill" data-chart-range="60">1&#48516;</button>
+    <button type="button" class="range-pill" data-chart-range="600">10&#48516;</button>
+    <button type="button" class="range-pill" data-chart-range="3600">1&#49884;&#44036;</button>
+  </div>
+</section>
+
 <div class="portfolio-grid" data-portfolio-grid>
   {% for item in holdings %}
     <a class="portfolio-card" href="{{ url_for('stocks.stock_detail', stock_id=item.stock_id) }}" data-portfolio-card>
@@ -14,26 +29,26 @@
         <div>
           <p>{{ item.symbol }}</p>
           <strong data-portfolio-name>{{ item.name }}</strong>
-          <span data-portfolio-qty>{{ item.quantity }}주 보유</span>
+          <span data-portfolio-qty>{{ item.quantity }}&#51452; &#48372;&#50976;</span>
         </div>
         <div class="portfolio-value-block">
-          <strong data-portfolio-value>{{ "{:,}".format(item.current_value) }}원</strong>
+          <strong data-portfolio-value>{{ "{:,}".format(item.current_value) }}&#50896;</strong>
           <span class="{{ 'up' if item.profit >= 0 else 'down' }}" data-portfolio-profit>
-            {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}원
+            {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}&#50896;
           </span>
         </div>
       </div>
       <div class="portfolio-stats">
         <div>
-          <span>평단가</span>
-          <strong data-portfolio-avg>{{ "{:,}".format(item.avg_price) }}원</strong>
+          <span>&#54217;&#45800;&#44032;</span>
+          <strong data-portfolio-avg>{{ "{:,}".format(item.avg_price) }}&#50896;</strong>
         </div>
         <div>
-          <span>현재가</span>
-          <strong data-portfolio-current>{{ "{:,}".format(item.current_price) }}원</strong>
+          <span>&#54788;&#51116;&#44032;</span>
+          <strong data-portfolio-current>{{ "{:,}".format(item.current_price) }}&#50896;</strong>
         </div>
         <div>
-          <span>수익률</span>
+          <span>&#49688;&#51061;&#47456;</span>
           <strong class="{{ 'up' if item.profit >= 0 else 'down' }}" data-portfolio-rate>
             {{ '+' if item.profit >= 0 else '' }}{{ "%.2f"|format(item.profit_rate) }}%
           </strong>
@@ -42,16 +57,24 @@
       <div class="portfolio-chart-wrap">
         <canvas
           class="portfolio-mini-chart"
-          width="220"
-          height="88"
+          width="420"
+          height="140"
           data-portfolio-chart
+          data-mini-chart
+          data-responsive="true"
+          data-show-mini-labels
           data-values="{{ item.history_prices|join(',') }}"
           data-labels="{{ item.history_labels|join(',') }}"
+          data-timestamps="{{ item.history_timestamps|join(',') }}"
+          data-stock-name="{{ item.name }}"
+          data-current-price="{{ item.current_price }}"
+          data-avg-price="{{ item.avg_price }}"
+          data-range="10"
         ></canvas>
       </div>
     </a>
   {% else %}
-    <p class="empty">보유 종목이 없습니다.</p>
+    <p class="empty">&#48372;&#50976; &#51333;&#47785;&#51060; &#50630;&#49845;&#45768;&#45796;.</p>
   {% endfor %}
 </div>
 <script id="portfolio-snapshot-endpoint" type="application/json">{{ url_for('stocks.portfolio_snapshot') }}</script>

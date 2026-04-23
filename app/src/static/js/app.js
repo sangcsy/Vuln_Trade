@@ -33,15 +33,40 @@ function formatClock(timestamp, withSeconds = true) {
   }).format(date);
 }
 
+function getChartState(canvas) {
+  if (!canvas._chartState) {
+    canvas._chartState = {};
+  }
+  return canvas._chartState;
+}
+
+function resetCanvasLayout(canvas) {
+  const state = getChartState(canvas);
+  delete state.layoutWidth;
+  delete state.layoutHeight;
+}
+
 function setupCanvas(canvas) {
+  const state = getChartState(canvas);
   const ctx = canvas.getContext("2d");
   const ratio = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(Math.round(rect.width || canvas.clientWidth || Number(canvas.dataset.baseWidth) || canvas.width), 1);
-  const height = Math.max(Math.round(rect.height || canvas.clientHeight || Number(canvas.dataset.baseHeight) || canvas.height), 1);
 
-  canvas.dataset.baseWidth = String(width);
-  canvas.dataset.baseHeight = String(height);
+  if (!state.layoutWidth || !state.layoutHeight) {
+    const rect = canvas.getBoundingClientRect();
+    const fallbackWidth = Number(canvas.dataset.layoutWidth || canvas.getAttribute("width")) || canvas.clientWidth || canvas.width || 1;
+    const fallbackHeight = Number(canvas.dataset.layoutHeight || canvas.getAttribute("height")) || canvas.clientHeight || canvas.height || 1;
+    const useResponsiveSize = canvas.dataset.responsive === "true";
+
+    state.layoutWidth = Math.max(Math.round(useResponsiveSize ? (rect.width || fallbackWidth) : fallbackWidth), 1);
+    state.layoutHeight = Math.max(Math.round(useResponsiveSize ? (rect.height || fallbackHeight) : fallbackHeight), 1);
+  }
+
+  const width = state.layoutWidth;
+  const height = state.layoutHeight;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.dataset.layoutWidth = String(width);
+  canvas.dataset.layoutHeight = String(height);
 
   if (canvas.width !== width * ratio || canvas.height !== height * ratio) {
     canvas.width = width * ratio;
@@ -51,13 +76,6 @@ function setupCanvas(canvas) {
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, width, height);
   return { ctx, width, height };
-}
-
-function getChartState(canvas) {
-  if (!canvas._chartState) {
-    canvas._chartState = {};
-  }
-  return canvas._chartState;
 }
 
 function getTooltip() {
@@ -193,25 +211,43 @@ function bindChartTooltip(canvas, payload, points, redraw) {
   });
 }
 
-function drawLineChart(canvas, values, labels = []) {
+function drawCompactChart(canvas, payload, highlightedIndex = null) {
+  const values = payload.prices || [];
   if (!canvas || values.length === 0) return;
 
   const { ctx, width, height } = setupCanvas(canvas);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const padding = 8;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
+  const min = Math.min(...values, Number.isFinite(payload.avg_price) ? payload.avg_price : Number.POSITIVE_INFINITY);
+  const max = Math.max(...values, Number.isFinite(payload.avg_price) ? payload.avg_price : Number.NEGATIVE_INFINITY);
+  const paddingTop = 10;
+  const paddingBottom = payload.show_labels ? 22 : 10;
+  const paddingSide = 8;
+  const chartWidth = width - paddingSide * 2;
+  const chartHeight = height - paddingTop - paddingBottom;
   const range = max - min || 1;
-
-  const points = values.map((value, index) => ({
-    x: padding + (chartWidth * index) / Math.max(values.length - 1, 1),
-    y: padding + chartHeight - ((value - min) / range) * chartHeight,
-  }));
-
   const isUp = values.at(-1) >= values[0];
   const stroke = isUp ? "#f04452" : "#2f6fed";
   const fill = isUp ? "rgba(240, 68, 82, 0.12)" : "rgba(47, 111, 237, 0.12)";
+
+  const points = values.map((value, index) => ({
+    x: paddingSide + (chartWidth * index) / Math.max(values.length - 1, 1),
+    y: paddingTop + chartHeight - ((value - min) / range) * chartHeight,
+  }));
+
+  if (Number.isFinite(payload.avg_price)) {
+    const avgY = paddingTop + chartHeight - ((payload.avg_price - min) / range) * chartHeight;
+    ctx.strokeStyle = "rgba(17, 24, 39, 0.38)";
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(paddingSide, avgY);
+    ctx.lineTo(width - paddingSide, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#374151";
+    ctx.font = '11px "Segoe UI", "Malgun Gothic", sans-serif';
+    ctx.fillText(`AVG ${formatKrw(payload.avg_price)}`, paddingSide, Math.max(avgY - 6, 11));
+  }
 
   ctx.strokeStyle = stroke;
   ctx.fillStyle = fill;
@@ -227,29 +263,56 @@ function drawLineChart(canvas, values, labels = []) {
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(points[0].x, height - padding);
+  ctx.moveTo(points[0].x, height - paddingBottom);
   points.forEach((point) => ctx.lineTo(point.x, point.y));
-  ctx.lineTo(points.at(-1).x, height - padding);
+  ctx.lineTo(points.at(-1).x, height - paddingBottom);
   ctx.closePath();
   ctx.fill();
 
-  bindChartTooltip(
-    canvas,
-    {
-      stock: canvas.dataset.stockName || "",
-      current_price: values.at(-1),
-      prices: values,
-      labels,
-    },
-    points,
-    (targetCanvas, currentPayload) => {
-      drawLineChart(targetCanvas, currentPayload.prices || [], currentPayload.labels || []);
-    }
-  );
-}
+  if (Number.isFinite(payload.avg_price)) {
+    const avgY = paddingTop + chartHeight - ((payload.avg_price - min) / range) * chartHeight;
+    ctx.strokeStyle = "rgba(17, 24, 39, 0.62)";
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.25;
+    ctx.beginPath();
+    ctx.moveTo(paddingSide, avgY);
+    ctx.lineTo(width - paddingSide, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#111827";
+    ctx.font = '700 11px "Segoe UI", "Malgun Gothic", sans-serif';
+    ctx.fillText(`AVG ${formatKrw(payload.avg_price)}`, paddingSide, Math.max(avgY - 6, 11));
+  }
 
-function drawMiniPortfolioChart(canvas, values, labels = []) {
-  drawLineChart(canvas, values, labels);
+  if (payload.show_labels) {
+    const labels = payload.labels || [];
+    ctx.fillStyle = "#7e8796";
+    ctx.font = '11px "Segoe UI", "Malgun Gothic", sans-serif';
+    [0, Math.floor(labels.length / 2), labels.length - 1].forEach((index) => {
+      if (labels[index] && points[index]) {
+        ctx.fillText(labels[index], Math.max(points[index].x - 16, 4), height - 6);
+      }
+    });
+  }
+
+  if (highlightedIndex !== null && points[highlightedIndex]) {
+    const activePoint = points[highlightedIndex];
+    ctx.strokeStyle = "rgba(17, 24, 39, 0.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(activePoint.x, paddingTop);
+    ctx.lineTo(activePoint.x, height - paddingBottom);
+    ctx.stroke();
+
+    ctx.fillStyle = stroke;
+    ctx.beginPath();
+    ctx.arc(activePoint.x, activePoint.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (canvas.dataset.tooltip !== "false") {
+    bindChartTooltip(canvas, payload, points, drawCompactChart);
+  }
 }
 
 function drawDetailChart(canvas, payload, highlightedIndex = null) {
@@ -257,8 +320,10 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
   if (!canvas || values.length === 0) return;
 
   const { ctx, width, height } = setupCanvas(canvas);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const avgPrice = Number(payload.avg_price);
+  const hasAvgPrice = Number.isFinite(avgPrice) && avgPrice > 0;
+  const min = Math.min(...values, hasAvgPrice ? avgPrice : Number.POSITIVE_INFINITY);
+  const max = Math.max(...values, hasAvgPrice ? avgPrice : Number.NEGATIVE_INFINITY);
   const paddingTop = 28;
   const paddingBottom = 34;
   const paddingSide = 22;
@@ -284,6 +349,21 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
     y: paddingTop + chartHeight - ((value - min) / range) * chartHeight,
   }));
 
+  if (hasAvgPrice) {
+    const avgY = paddingTop + chartHeight - ((avgPrice - min) / range) * chartHeight;
+    ctx.strokeStyle = "rgba(17, 24, 39, 0.42)";
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(paddingSide, avgY);
+    ctx.lineTo(width - paddingSide, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#111827";
+    ctx.font = '700 12px "Segoe UI", "Malgun Gothic", sans-serif';
+    ctx.fillText(`AVG ${formatKrw(avgPrice)}`, paddingSide + 6, Math.max(avgY - 8, paddingTop + 12));
+  }
+
   ctx.strokeStyle = stroke;
   ctx.fillStyle = fill;
   ctx.lineWidth = 3;
@@ -304,12 +384,27 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
   ctx.closePath();
   ctx.fill();
 
-  const chartLabels = payload.labels || [];
+  if (hasAvgPrice) {
+    const avgY = paddingTop + chartHeight - ((avgPrice - min) / range) * chartHeight;
+    ctx.strokeStyle = "rgba(17, 24, 39, 0.62)";
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(paddingSide, avgY);
+    ctx.lineTo(width - paddingSide, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#111827";
+    ctx.font = '700 12px "Segoe UI", "Malgun Gothic", sans-serif';
+    ctx.fillText(`AVG ${formatKrw(avgPrice)}`, paddingSide + 6, Math.max(avgY - 8, paddingTop + 12));
+  }
+
+  const labels = payload.labels || [];
   ctx.fillStyle = "#7e8796";
   ctx.font = '12px "Segoe UI", "Malgun Gothic", sans-serif';
-  [0, Math.floor(chartLabels.length / 2), chartLabels.length - 1].forEach((index) => {
-    if (chartLabels[index] && points[index]) {
-      ctx.fillText(chartLabels[index], points[index].x - 18, height - 10);
+  [0, Math.floor(labels.length / 2), labels.length - 1].forEach((index) => {
+    if (labels[index] && points[index]) {
+      ctx.fillText(labels[index], points[index].x - 18, height - 10);
     }
   });
 
@@ -339,12 +434,48 @@ function renderManagedChart(canvas, rawPayload) {
   if (!canvas || !rawPayload) return;
   const interval = Number(canvas.dataset.range || 0);
   const derived = buildRangePayload(rawPayload, interval);
+  const avgPrice = Number(canvas.dataset.avgPrice);
+  if (Number.isFinite(avgPrice) && avgPrice > 0) {
+    derived.avg_price = avgPrice;
+  }
   const state = getChartState(canvas);
   state.rawPayload = rawPayload;
   state.activeRange = interval;
   state.payload = derived;
   state.highlightedIndex = null;
   drawDetailChart(canvas, derived);
+}
+
+function buildMiniPayload(canvas) {
+  return {
+    stock: canvas.dataset.stockName || "",
+    current_price: Number(canvas.dataset.currentPrice || 0),
+    avg_price: canvas.dataset.avgPrice ? Number(canvas.dataset.avgPrice) : undefined,
+    prices: parseValues(canvas.dataset.values),
+    labels: parseLabels(canvas.dataset.labels),
+    timestamps: parseLabels(canvas.dataset.timestamps),
+    show_labels: canvas.hasAttribute("data-show-mini-labels"),
+  };
+}
+
+function renderMiniManagedChart(canvas) {
+  if (!canvas) return;
+  const rawPayload = buildMiniPayload(canvas);
+  const interval = Number(canvas.dataset.range || 0);
+  const derived = buildRangePayload(rawPayload, interval);
+  const state = getChartState(canvas);
+  state.rawPayload = rawPayload;
+  state.activeRange = interval;
+  state.payload = { ...derived, avg_price: rawPayload.avg_price, show_labels: rawPayload.show_labels };
+  state.highlightedIndex = null;
+  drawCompactChart(canvas, state.payload);
+}
+
+function redrawMiniCharts(selector) {
+  document.querySelectorAll(selector).forEach((canvas) => {
+    resetCanvasLayout(canvas);
+    renderMiniManagedChart(canvas);
+  });
 }
 
 function updateLiveFields(payload) {
@@ -422,6 +553,34 @@ function bindRangeControls() {
   });
 }
 
+function bindMiniRangeControls() {
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-mini-range-group] [data-chart-range]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const group = button.closest("[data-mini-range-group]");
+    const selector = group?.dataset.targetSelector;
+    if (!selector) return;
+
+    setRangeButtons(group, button.dataset.chartRange);
+    document.querySelectorAll(selector).forEach((canvas) => {
+      canvas.dataset.range = button.dataset.chartRange;
+      renderMiniManagedChart(canvas);
+    });
+  });
+
+  document.querySelectorAll("[data-mini-range-group]").forEach((group) => {
+    const selector = group.dataset.targetSelector;
+    const activeRange = group.dataset.defaultRange || "10";
+    setRangeButtons(group, activeRange);
+    document.querySelectorAll(selector).forEach((canvas) => {
+      canvas.dataset.range = activeRange;
+    });
+  });
+}
+
 async function hydrateDetailChart() {
   const canvas = document.querySelector("[data-stock-chart]");
   if (!canvas) return;
@@ -429,8 +588,9 @@ async function hydrateDetailChart() {
   const endpoint = canvas.dataset.endpoint;
   if (!endpoint) return;
 
-  const refresh = async () => {
+  const refresh = async (resetSize = false) => {
     try {
+      if (resetSize) resetCanvasLayout(canvas);
       const response = await fetch(endpoint, { cache: "no-store" });
       if (!response.ok) return;
       const payload = await response.json();
@@ -442,7 +602,7 @@ async function hydrateDetailChart() {
   };
 
   await refresh();
-  window.addEventListener("resize", refresh);
+  window.addEventListener("resize", () => refresh(true));
   setInterval(refresh, 5000);
 }
 
@@ -485,6 +645,11 @@ function hydrateHomePreview() {
       event.currentTarget.classList.add("is-active");
       updateHomePreview(JSON.parse(event.currentTarget.dataset.stockPreview));
     });
+  });
+
+  window.addEventListener("resize", () => {
+    resetCanvasLayout(canvas);
+    updateHomePreview(JSON.parse(canvas.dataset.previewPayload));
   });
 
   updateHomePreview(JSON.parse(canvas.dataset.previewPayload));
@@ -637,7 +802,10 @@ async function hydratePortfolioSnapshot() {
         const chart = card.querySelector("[data-portfolio-chart]");
         chart.dataset.values = item.history_prices.join(",");
         chart.dataset.labels = item.history_labels.join(",");
-        drawMiniPortfolioChart(chart, item.history_prices, item.history_labels);
+        chart.dataset.timestamps = item.history_timestamps.join(",");
+        chart.dataset.currentPrice = item.current_price;
+        chart.dataset.avgPrice = item.avg_price;
+        renderMiniManagedChart(chart);
       });
     } catch (_) {
       return;
@@ -648,6 +816,16 @@ async function hydratePortfolioSnapshot() {
   setInterval(refresh, 5000);
 }
 
+function initializeMiniCharts() {
+  document.querySelectorAll("[data-mini-chart]").forEach((canvas) => {
+    renderMiniManagedChart(canvas);
+  });
+
+  window.addEventListener("resize", () => {
+    redrawMiniCharts("[data-mini-chart]");
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".flash").forEach((item) => {
     setTimeout(() => {
@@ -656,15 +834,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 2500);
   });
 
-  document.querySelectorAll(".sparkline").forEach((canvas) => {
-    drawLineChart(canvas, parseValues(canvas.dataset.values), parseLabels(canvas.dataset.labels));
-  });
-
-  document.querySelectorAll("[data-portfolio-chart]").forEach((canvas) => {
-    drawMiniPortfolioChart(canvas, parseValues(canvas.dataset.values), parseLabels(canvas.dataset.labels));
-  });
-
+  initializeMiniCharts();
   bindRangeControls();
+  bindMiniRangeControls();
   hydrateHomePreview();
   hydrateDetailChart();
   hydrateMarketSnapshot();

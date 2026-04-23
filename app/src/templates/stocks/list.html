@@ -1,44 +1,100 @@
 {% extends "base.html" %}
-{% block title %}주식 둘러보기{% endblock %}
+{% block title %}Stocks{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
-    <p class="eyebrow">실시간 시세</p>
-    <h1>{% if search_query %}"{{ search_query }}" 검색 결과{% else %}주식 둘러보기{% endif %}</h1>
+    <p class="eyebrow">Live Market</p>
+    <h1>{% if search_query %}"{{ search_query }}" &#44160;&#49353; &#44208;&#44284;{% else %}&#51452;&#49885; &#46168;&#47084;&#48372;&#44592;{% endif %}</h1>
   </div>
   {% if search_query %}
-    <a class="button ghost inline-btn action-chip" href="{{ url_for('stocks.list_stocks') }}">전체 보기</a>
+    <a class="button ghost inline-btn action-chip" href="{{ url_for('stocks.list_stocks') }}">&#51204;&#52404; &#48372;&#44592;</a>
   {% endif %}
 </section>
 
-<section class="card board-card">
-  <div class="rank-list rank-list-wide">
-    {% for stock in stocks %}
-      <a class="rank-row rank-row-wide" href="{{ url_for('stocks.stock_detail', stock_id=stock.id) }}">
-        <div class="rank-main">
-          <span class="rank-number">{{ loop.index }}</span>
-          <div>
-            <strong>{{ stock.name }}</strong>
-            <p>{{ stock.symbol }}</p>
-          </div>
-        </div>
-        <div class="rank-price-block">
-          <strong>{{ "{:,}".format(stock.current_price) }}원</strong>
-          <span class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
-            {{ '+' if stock.change_amount >= 0 else '' }}{{ "{:,}".format(stock.change_amount) }}원
-          </span>
-        </div>
-        <div class="rank-price-block">
-          <strong class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
-            {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
-          </strong>
-          <span class="muted">최근 흐름</span>
-        </div>
-        <canvas class="sparkline wide" width="160" height="44" data-values="{{ stock.history_prices|join(',') }}"></canvas>
-      </a>
-    {% else %}
-      <p class="empty">검색된 종목이 없습니다.</p>
-    {% endfor %}
+<section class="chart-filter-bar">
+  <div>
+    <p class="eyebrow">&#52264;&#53944; &#44036;&#44201;</p>
+    <h2>&#44160;&#49353; &#44208;&#44284; &#52264;&#53944; &#49884;&#44036; &#45800;&#50948;</h2>
   </div>
+  <div class="chart-control-row" data-mini-range-group data-target-selector=".sparkline" data-default-range="10">
+    <button type="button" class="range-pill is-active" data-chart-range="10">10&#52488;</button>
+    <button type="button" class="range-pill" data-chart-range="30">30&#52488;</button>
+    <button type="button" class="range-pill" data-chart-range="60">1&#48516;</button>
+    <button type="button" class="range-pill" data-chart-range="600">10&#48516;</button>
+    <button type="button" class="range-pill" data-chart-range="3600">1&#49884;&#44036;</button>
+  </div>
+</section>
+
+<section class="stock-search-layout">
+  <div class="card board-card">
+    <div class="rank-list rank-list-wide">
+      {% for stock in stocks %}
+        <a class="rank-row rank-row-wide" href="{{ url_for('stocks.stock_detail', stock_id=stock.id) }}">
+          <div class="rank-main">
+            <span class="rank-number">{{ loop.index }}</span>
+            <div>
+              <strong>{{ stock.name }}</strong>
+              <p>{{ stock.symbol }}</p>
+            </div>
+          </div>
+          <div class="rank-price-block">
+            <strong>{{ "{:,}".format(stock.current_price) }}&#50896;</strong>
+            <span class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
+              {{ '+' if stock.change_amount >= 0 else '' }}{{ "{:,}".format(stock.change_amount) }}&#50896;
+            </span>
+          </div>
+          <div class="rank-price-block">
+            <strong class="{{ 'up' if stock.change_amount >= 0 else 'down' }}">
+              {{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%
+            </strong>
+            <span class="muted">&#52572;&#44540; &#55120;&#47492;</span>
+          </div>
+          <canvas
+            class="sparkline wide"
+            width="160"
+            height="44"
+            data-mini-chart
+            data-values="{{ stock.history_prices|join(',') }}"
+            data-labels="{{ stock.history_labels|join(',') }}"
+            data-timestamps="{{ stock.history_timestamps|join(',') }}"
+            data-stock-name="{{ stock.name }}"
+            data-current-price="{{ stock.current_price }}"
+            data-range="10"
+            data-tooltip="false"
+          ></canvas>
+        </a>
+      {% else %}
+        <p class="empty">&#44160;&#49353;&#54620; &#51333;&#47785;&#51060; &#50630;&#49845;&#45768;&#45796;.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="card stock-news-panel">
+    <div class="section-head compact-head">
+      <div>
+        <p class="eyebrow">Company Brief</p>
+        <h2>&#51333;&#47785;&#48324; &#51060;&#49800;</h2>
+      </div>
+    </div>
+    <div class="stock-news-list">
+      {% for stock in stocks %}
+        <div class="stock-news-group">
+          <div class="stock-news-title">
+            <strong>{{ stock.name }}</strong>
+            <span>{{ stock.symbol }}</span>
+          </div>
+          {% for news in stock.news_items[:2] %}
+            <article class="stock-news-card">
+              <strong>{{ news.title }}</strong>
+              <p>{{ news.summary }}</p>
+              <span>{{ news.source }}</span>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty">&#54364;&#49884;&#54624; &#45684;&#49828;&#44032; &#50630;&#49845;&#45768;&#45796;.</p>
+      {% endfor %}
+    </div>
+  </aside>
 </section>
 {% endblock %}
