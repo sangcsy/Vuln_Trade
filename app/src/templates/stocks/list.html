@@ -76,9 +76,14 @@
         <h2>&#51333;&#47785;&#48324; &#51060;&#49800;</h2>
       </div>
     </div>
+    <div class="stock-news-tabs" data-news-tabs>
+      {% for stock in stocks %}
+        <button type="button" class="news-tab {% if loop.first %}is-active{% endif %}" data-news-tab="{{ stock.id }}">{{ stock.name }}</button>
+      {% endfor %}
+    </div>
     <div class="stock-news-list">
       {% for stock in stocks %}
-        <div class="stock-news-group">
+        <div class="stock-news-group {% if not loop.first %}is-hidden{% endif %}" data-news-group="{{ stock.id }}">
           <div class="stock-news-title">
             <strong>{{ stock.name }}</strong>
             <span>{{ stock.symbol }}</span>

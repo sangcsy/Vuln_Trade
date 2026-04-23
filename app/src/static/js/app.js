@@ -233,22 +233,6 @@ function drawCompactChart(canvas, payload, highlightedIndex = null) {
     y: paddingTop + chartHeight - ((value - min) / range) * chartHeight,
   }));
 
-  if (Number.isFinite(payload.avg_price)) {
-    const avgY = paddingTop + chartHeight - ((payload.avg_price - min) / range) * chartHeight;
-    ctx.strokeStyle = "rgba(17, 24, 39, 0.38)";
-    ctx.setLineDash([4, 4]);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(paddingSide, avgY);
-    ctx.lineTo(width - paddingSide, avgY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#374151";
-    ctx.font = '11px "Segoe UI", "Malgun Gothic", sans-serif';
-    ctx.fillText(`AVG ${formatKrw(payload.avg_price)}`, paddingSide, Math.max(avgY - 6, 11));
-  }
-
   ctx.strokeStyle = stroke;
   ctx.fillStyle = fill;
   ctx.lineWidth = 2.25;
@@ -348,21 +332,6 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
     x: paddingSide + (chartWidth * index) / Math.max(values.length - 1, 1),
     y: paddingTop + chartHeight - ((value - min) / range) * chartHeight,
   }));
-
-  if (hasAvgPrice) {
-    const avgY = paddingTop + chartHeight - ((avgPrice - min) / range) * chartHeight;
-    ctx.strokeStyle = "rgba(17, 24, 39, 0.42)";
-    ctx.setLineDash([6, 5]);
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(paddingSide, avgY);
-    ctx.lineTo(width - paddingSide, avgY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = "#111827";
-    ctx.font = '700 12px "Segoe UI", "Malgun Gothic", sans-serif';
-    ctx.fillText(`AVG ${formatKrw(avgPrice)}`, paddingSide + 6, Math.max(avgY - 8, paddingTop + 12));
-  }
 
   ctx.strokeStyle = stroke;
   ctx.fillStyle = fill;
@@ -529,6 +498,25 @@ function updateHomePreview(payload) {
     updatedAtNode.textContent = payload.latest_time_label || formatClock(payload.timestamps?.at(-1), true);
   }
 
+  const newsBox = document.querySelector("[data-preview-news]");
+  if (newsBox) {
+    const heading = newsBox.querySelector("[data-preview-news-heading]");
+    const symbol = newsBox.querySelector("[data-preview-news-symbol]");
+    if (heading) heading.textContent = `${payload.stock} 이슈`;
+    if (symbol) symbol.textContent = payload.symbol || "";
+
+    const cards = Array.from(newsBox.querySelectorAll("[data-preview-news-card]"));
+    const newsItems = payload.news_items || [];
+    cards.forEach((card, index) => {
+      const item = newsItems[index];
+      card.style.display = item ? "" : "none";
+      if (!item) return;
+      card.querySelector("strong").textContent = item.title;
+      card.querySelector("p").textContent = item.summary;
+      card.querySelector("span").textContent = item.source;
+    });
+  }
+
   canvas.dataset.previewPayload = JSON.stringify(payload);
 }
 
@@ -579,6 +567,84 @@ function bindMiniRangeControls() {
       canvas.dataset.range = activeRange;
     });
   });
+}
+
+function bindTickerCarousel() {
+  const row = document.querySelector("[data-home-stocks]");
+  const viewport = row?.closest(".ticker-viewport");
+  const shell = row?.closest(".ticker-shell");
+  const prev = document.querySelector("[data-ticker-prev]");
+  const next = document.querySelector("[data-ticker-next]");
+  const cards = Array.from(document.querySelectorAll("[data-ticker-card]"));
+  if (!row || !viewport || !shell || !prev || !next || cards.length === 0) return;
+
+  const getVisibleCount = () => {
+    if (window.matchMedia("(max-width: 820px)").matches) return 1;
+    if (window.matchMedia("(max-width: 1280px)").matches) return 2;
+    return 5;
+  };
+
+  const render = () => {
+    const visibleCount = getVisibleCount();
+    const maxOffset = Math.max(cards.length - visibleCount, 0);
+    const offset = Math.min(Math.max(Number(row.dataset.tickerOffset || 0), 0), maxOffset);
+    row.dataset.tickerOffset = String(offset);
+    const gap = Number.parseFloat(window.getComputedStyle(row).columnGap || window.getComputedStyle(row).gap || "0") || 0;
+    const cardWidth = Math.max((viewport.clientWidth - gap * (visibleCount - 1)) / visibleCount, 1);
+    row.style.setProperty("--ticker-card-width", `${cardWidth}px`);
+    const shift = offset * (cardWidth + gap);
+    row.style.transform = `translateX(-${shift}px)`;
+    prev.disabled = offset === 0;
+    next.disabled = offset === maxOffset;
+  };
+
+  const move = (delta) => {
+    row.dataset.tickerOffset = String(Number(row.dataset.tickerOffset || 0) + delta);
+    render();
+  };
+
+  shell.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-ticker-prev], [data-ticker-next]");
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    move(button.hasAttribute("data-ticker-prev") ? -1 : 1);
+  });
+
+  render();
+  window.addEventListener("resize", render);
+}
+
+function bindStockNewsTabs() {
+  document.addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-news-tab]");
+    if (!tab) return;
+    event.preventDefault();
+
+    const target = tab.dataset.newsTab;
+    document.querySelectorAll("[data-news-tab]").forEach((item) => {
+      item.classList.toggle("is-active", item === tab);
+    });
+    document.querySelectorAll("[data-news-group]").forEach((group) => {
+      group.classList.toggle("is-hidden", group.dataset.newsGroup !== target);
+    });
+  });
+}
+
+function syncTransferHistoryHeight() {
+  const leftColumn = document.querySelector(".transfer-left-column");
+  const historyCard = document.querySelector(".transfer-history-card");
+  if (!leftColumn || !historyCard) return;
+
+  if (window.matchMedia("(max-width: 1280px)").matches) {
+    historyCard.style.removeProperty("--transfer-history-height");
+    return;
+  }
+
+  const height = Math.round(leftColumn.getBoundingClientRect().height);
+  if (height > 0) {
+    historyCard.style.setProperty("--transfer-history-height", `${height}px`);
+  }
 }
 
 async function hydrateDetailChart() {
@@ -632,6 +698,11 @@ function bindTradeForms() {
     qtyInput.addEventListener("input", sync);
     sync();
   });
+}
+
+function bindTransferLayout() {
+  syncTransferHistoryHeight();
+  window.addEventListener("resize", syncTransferHistoryHeight);
 }
 
 function hydrateHomePreview() {
@@ -837,9 +908,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeMiniCharts();
   bindRangeControls();
   bindMiniRangeControls();
+  bindTickerCarousel();
+  bindStockNewsTabs();
   hydrateHomePreview();
   hydrateDetailChart();
   hydrateMarketSnapshot();
   hydratePortfolioSnapshot();
   bindTradeForms();
+  bindTransferLayout();
 });

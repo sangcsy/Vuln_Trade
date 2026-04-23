@@ -5,59 +5,58 @@
   <div class="transfer-left-column">
     <div class="card transfer-intro compact">
       <p class="eyebrow">간편 송금</p>
-      <h1>요청 보내기</h1>
       <div class="transfer-balance compact">
         <span>송금 가능한 자산</span>
         <strong>{{ "{:,}".format(balance) }}원</strong>
       </div>
     </div>
 
-    <div class="card transfer-history-card">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Wallet</p>
-          <h2>최근 송금 내역</h2>
-        </div>
-      </div>
-      <div class="feed-list transfer-history-list">
-        {% for tx in transactions %}
-        <div class="feed-item transfer-feed-item">
-          <div class="transfer-title-row">
-            <strong>{{ tx.display_type if tx.display_type else ('송금' if tx.type == 'transfer_out' else '송금 입금') }}</strong>
-            <span class="transfer-direction {{ tx.direction_class }}">{{ tx.direction_label }}</span>
-          </div>
-          <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-          <div class="transfer-route">
-            <span class="{{ 'is-me' if tx.is_mine_sender else '' }}">보내는 사람: {{ tx.from_name }}</span>
-            <span class="transfer-arrow">→</span>
-            <span class="{{ 'is-me' if tx.is_mine_receiver else '' }}">받는 사람: {{ tx.to_name }}</span>
-          </div>
-          <div class="meta-row">
-            <span>{{ "{:,}".format(tx.amount) }}원</span>
-          </div>
-          <p class="subtle">{{ tx.note or '' }}</p>
-        </div>
-        {% else %}
-        <p class="empty">송금 내역이 없습니다.</p>
+    <form method="post" class="card form-card transfer-form">
+      <p class="eyebrow">송금 실행</p>
+      <h2>보낼 대상과 금액</h2>
+      <label>받는 사람</label>
+      <select name="target_user_id">
+        {% for user in users %}
+        <option value="{{ user.id }}">{{ user.display_name }} ({{ user.username }})</option>
         {% endfor %}
-      </div>
-    </div>
+      </select>
+      <label>금액</label>
+      <input type="number" name="amount" value="10000">
+      <label>메모</label>
+      <input type="text" name="note" placeholder="예: 식사 정산">
+      <button type="submit" class="button primary">송금하기</button>
+    </form>
   </div>
 
-  <form method="post" class="card form-card transfer-form">
-    <p class="eyebrow">송금 실행</p>
-    <h2>보낼 대상과 금액</h2>
-    <label>받는 사람</label>
-    <select name="target_user_id">
-      {% for user in users %}
-      <option value="{{ user.id }}">{{ user.display_name }} ({{ user.username }})</option>
+  <div class="card transfer-history-card">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">Wallet</p>
+        <h2>최근 송금 내역</h2>
+      </div>
+    </div>
+    <div class="feed-list transfer-history-list">
+      {% for tx in transactions %}
+      <div class="feed-item transfer-feed-item">
+        <div class="transfer-title-row">
+          <strong>{{ tx.display_type if tx.display_type else ('송금' if tx.type == 'transfer_out' else '송금 입금') }}</strong>
+          <span class="transfer-direction {{ tx.direction_class }}">{{ tx.direction_label }}</span>
+        </div>
+        <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+        <div class="transfer-route">
+          <span class="{{ 'is-me' if tx.is_mine_sender else '' }}">보내는 사람: {{ tx.from_name }}</span>
+          <span class="transfer-arrow">→</span>
+          <span class="{{ 'is-me' if tx.is_mine_receiver else '' }}">받는 사람: {{ tx.to_name }}</span>
+        </div>
+        <div class="meta-row">
+          <span>{{ "{:,}".format(tx.amount) }}원</span>
+        </div>
+        <p class="subtle">{{ tx.note or '' }}</p>
+      </div>
+      {% else %}
+      <p class="empty">송금 내역이 없습니다.</p>
       {% endfor %}
-    </select>
-    <label>금액</label>
-    <input type="number" name="amount" value="10000">
-    <label>메모</label>
-    <input type="text" name="note" placeholder="예: 식사 정산">
-    <button type="submit" class="button primary">송금하기</button>
-  </form>
+    </div>
+  </div>
 </section>
 {% endblock %}

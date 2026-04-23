@@ -4,39 +4,24 @@
 <section class="detail-shell">
   <div class="detail-main">
     <div class="card detail-hero">
-      <div class="detail-hero-grid">
+      <div class="hero-headline">
         <div>
-          <div class="hero-headline">
-            <div>
-              <p class="eyebrow">{{ stock.symbol }}</p>
-              <h1>{{ stock.name }}</h1>
-            </div>
-            <div class="stat-badge">실시간 갱신</div>
-          </div>
-          <div class="price-xl" data-live-price>{{ "{:,}".format(stock.current_price) }}원</div>
-          <p class="{{ 'up' if stock.change_amount >= 0 else 'down' }}" data-live-change>
-            {{ '+' if stock.change_amount >= 0 else '' }}{{ "{:,}".format(stock.change_amount) }}원
-            ({{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%)
-          </p>
-          <p class="subtle">업데이트 <span data-live-updated-at>{{ stock.latest_time_label }}</span></p>
-          {% if holding %}
-            <p class="subtle">보유 {{ holding.quantity }}주 · 평균 단가 {{ "{:,}".format(holding.avg_price) }}원</p>
-          {% else %}
-            <p class="subtle">현재 보유 중인 수량은 없습니다.</p>
-          {% endif %}
+          <p class="eyebrow">{{ stock.symbol }}</p>
+          <h1>{{ stock.name }}</h1>
         </div>
-        <div class="hero-news-box">
-          <p class="eyebrow">Company Issues</p>
-          <h3>{{ stock.symbol }} 뉴스 요약</h3>
-          {% for news in stock.news_items[:2] %}
-            <article class="stock-news-card">
-              <strong>{{ news.title }}</strong>
-              <p>{{ news.summary }}</p>
-              <span>{{ news.source }}</span>
-            </article>
-          {% endfor %}
-        </div>
+        <div class="stat-badge">실시간 갱신</div>
       </div>
+      <div class="price-xl" data-live-price>{{ "{:,}".format(stock.current_price) }}원</div>
+      <p class="{{ 'up' if stock.change_amount >= 0 else 'down' }}" data-live-change>
+        {{ '+' if stock.change_amount >= 0 else '' }}{{ "{:,}".format(stock.change_amount) }}원
+        ({{ '+' if stock.change_amount >= 0 else '' }}{{ "%.2f"|format(stock.change_rate) }}%)
+      </p>
+      <p class="subtle">업데이트 <span data-live-updated-at>{{ stock.latest_time_label }}</span></p>
+      {% if holding %}
+        <p class="subtle">보유 {{ holding.quantity }}주 · 평균 단가 {{ "{:,}".format(holding.avg_price) }}원</p>
+      {% else %}
+        <p class="subtle">현재 보유 중인 수량은 없습니다.</p>
+      {% endif %}
     </div>
 
     <div class="card chart-panel">
@@ -85,9 +70,40 @@
   </div>
 
   <aside class="detail-side">
+    <div class="card detail-info-panel">
+      <div class="section-head compact-head">
+        <div>
+          <p class="eyebrow">Stock Profile</p>
+          <h2>{{ stock.symbol }} 종목 정보</h2>
+        </div>
+      </div>
+      <div class="stock-info-grid">
+        <div class="stock-info-item">
+          <span>시작가</span>
+          <strong>{{ "{:,}".format(stock.detail_metrics.open_price) }}원</strong>
+        </div>
+        <div class="stock-info-item">
+          <span>종가</span>
+          <strong>{{ "{:,}".format(stock.detail_metrics.close_price) }}원</strong>
+        </div>
+        <div class="stock-info-item">
+          <span>거래대금</span>
+          <strong>{{ "{:,}".format(stock.detail_metrics.trading_value) }}원</strong>
+        </div>
+        <div class="stock-info-item">
+          <span>시가총액</span>
+          <strong>{{ "{:,}".format(stock.detail_metrics.market_cap) }}원</strong>
+        </div>
+      </div>
+      <div class="stock-opinion">
+        <span>투자의견</span>
+        <strong>{{ stock.detail_metrics.opinion }} · 목표주가 {{ "{:,}".format(stock.detail_metrics.target_price) }}원</strong>
+      </div>
+    </div>
+
     <form method="post" class="card form-card trade-card" data-trade-form data-action="buy">
       <h2 class="up">매수</h2>
-      <p class="subtle">총액은 화면의 현재가를 기준으로 자동 계산됩니다.</p>
+      <p class="subtle trade-note">총액은 화면의 현재가를 기준으로 자동 계산됩니다.</p>
       <input type="hidden" name="action" value="buy">
       <label>수량</label>
       <input type="number" name="quantity" min="1" value="1" data-quantity-input>

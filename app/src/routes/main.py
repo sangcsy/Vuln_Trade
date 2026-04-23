@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from ..db import get_db
+from ..services.news_service import stock_news_items
 from ..utils.decorators import login_required
 
 
@@ -55,6 +56,7 @@ def enrich_stock_cards(cursor, stocks):
         stock["history_timestamps"] = timestamps
         stock["detail_url"] = url_for("stocks.stock_detail", stock_id=stock["id"])
         stock["latest_time_label"] = labels[-1] if labels else datetime.now().strftime("%H:%M:%S")
+        stock["news_items"] = stock_news_items(stock)
         stock["preview_json"] = json.dumps(
             {
                 "stock": stock["name"],
@@ -67,6 +69,7 @@ def enrich_stock_cards(cursor, stocks):
                 "timestamps": timestamps,
                 "detail_url": stock["detail_url"],
                 "latest_time_label": stock["latest_time_label"],
+                "news_items": stock["news_items"],
             },
             ensure_ascii=False,
         )
@@ -235,6 +238,7 @@ def market_snapshot():
                     "preview_json": stock["preview_json"],
                     "detail_url": stock["detail_url"],
                     "latest_time_label": stock["latest_time_label"],
+                    "news_items": stock["news_items"],
                 }
                 for stock in payload["stocks"]
             ],

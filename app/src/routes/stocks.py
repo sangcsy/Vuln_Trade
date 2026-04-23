@@ -1,6 +1,7 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from ..db import get_db
+from ..services.news_service import stock_news_items
 from ..services.stock_service import buy_stock, sell_stock
 from ..utils.decorators import login_required
 
@@ -49,32 +50,31 @@ def attach_market_data(cursor, stocks, history_limit=LIST_HISTORY_LIMIT):
     return result
 
 
-def stock_news_items(stock, limit=3):
-    name = stock["name"]
-    symbol = stock["symbol"]
-    return [
-        {
-            "title": f"{name}, \uc0dd\uc0b0 \ub77c\uc778 \uc815\ube44 \uc77c\uc815 \uc55e\ub450\uace0 \uacf5\uae09\ub9dd \uc810\uac80",
-            "summary": f"{symbol} \ud611\ub825\uc0ac\ub4e4\uc740 \ubd80\ud488 \uc7ac\uace0\uc640 \ub0a9\uae30 \uc77c\uc815\uc744 \ub2e4\uc2dc \ud655\uc778\ud558\uba70 \ub2e4\uc74c \ubd84\uae30 \uc6b4\uc601 \uacc4\ud68d\uc744 \uc870\uc728\ud558\uace0 \uc788\uc2b5\ub2c8\ub2e4.",
-            "source": "Industry Desk",
-        },
-        {
-            "title": f"{name}, \uc9c0\uc5ed \ucc44\uc6a9 \ubc0f \ud604\uc7a5 \uc2e4\uc2b5 \ud504\ub85c\uadf8\ub7a8 \ud655\ub300",
-            "summary": "\ud68c\uc0ac\ub294 \uc9c0\uc5ed \ub300\ud559\uacfc\uc758 \ud611\uc5c5\uc744 \ub298\ub9ac\uace0 \uccad\ub144 \uc778\ud134\uc2ed \uaddc\ubaa8\ub97c \ud655\ub300\ud558\ub294 \ubc29\uc548\uc744 \ubc1c\ud45c\ud588\uc2b5\ub2c8\ub2e4.",
-            "source": "Local Business",
-        },
-        {
-            "title": f"{symbol}, \ub0b4\ubd80 \ubcf4\uc548 \uaddc\uc815 \uac15\ud654\uc640 \uad8c\ud55c \uac80\uc218 \ucc29\uc218",
-            "summary": "\ucd5c\uadfc \uc0ac\uc774\ubc84 \uc704\ud611 \uc99d\uac00\uc5d0 \ub300\uc751\ud574 \uc784\uc9c1\uc6d0 \uacc4\uc815 \uad8c\ud55c\uacfc \ubb38\uc11c \ubc18\ucd9c \uc808\ucc28\ub97c \ub2e4\uc2dc \uc815\ube44\ud558\uace0 \uc788\uc2b5\ub2c8\ub2e4.",
-            "source": "Tech Compliance",
-        },
-    ][:limit]
-
-
 def attach_news(stocks):
     for stock in stocks:
         stock["news_items"] = stock_news_items(stock)
     return stocks
+
+
+def build_detail_metrics(stock):
+    prices = stock.get("history_prices") or [stock["current_price"]]
+    open_price = prices[0]
+    close_price = stock["current_price"]
+    base_shares = 42_000_000 + (stock["id"] * 3_700_000)
+    recent_prices = prices[-30:] or prices
+    trading_value = int(sum(recent_prices) * (900 + stock["id"] * 37))
+    market_cap = int(close_price * base_shares)
+    target_price = int(close_price * (1.08 if stock.get("change_rate", 0) >= 0 else 1.04))
+    opinion = "\ub9e4\uc218" if target_price > close_price * 1.05 else "\uc911\ub9bd"
+
+    return {
+        "open_price": open_price,
+        "close_price": close_price,
+        "trading_value": trading_value,
+        "market_cap": market_cap,
+        "opinion": opinion,
+        "target_price": target_price,
+    }
 
 
 @stocks_bp.route("/")
@@ -116,6 +116,7 @@ def stock_detail(stock_id):
         if stock:
             stock = attach_market_data(cursor, [stock], history_limit=DETAIL_HISTORY_LIMIT)[0]
             stock["news_items"] = stock_news_items(stock)
+            stock["detail_metrics"] = build_detail_metrics(stock)
         if session.get("user_id"):
             cursor.execute(
                 "SELECT * FROM holdings WHERE user_id=%s AND stock_id=%s",
