@@ -184,6 +184,7 @@ The workflow in `.github/workflows/deploy-ec2.yml` runs on pushes to `dev` and c
 Deployment commands executed on EC2:
 
 ```bash
+cd /home/ec2-user/Vuln_Trade
 git fetch origin dev
 git checkout dev
 git pull --ff-only origin dev
