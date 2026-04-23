@@ -36,11 +36,18 @@ function formatClock(timestamp, withSeconds = true) {
 function setupCanvas(canvas) {
   const ctx = canvas.getContext("2d");
   const ratio = window.devicePixelRatio || 1;
-  const width = canvas.clientWidth || canvas.width;
-  const height = canvas.clientHeight || canvas.height;
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(Math.round(rect.width || canvas.clientWidth || Number(canvas.dataset.baseWidth) || canvas.width), 1);
+  const height = Math.max(Math.round(rect.height || canvas.clientHeight || Number(canvas.dataset.baseHeight) || canvas.height), 1);
 
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
+  canvas.dataset.baseWidth = String(width);
+  canvas.dataset.baseHeight = String(height);
+
+  if (canvas.width !== width * ratio || canvas.height !== height * ratio) {
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+  }
+
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, width, height);
   return { ctx, width, height };
@@ -162,7 +169,8 @@ function bindChartTooltip(canvas, payload, points, redraw) {
       }
     });
 
-    if (typeof current.redraw === "function") {
+    if (current.highlightedIndex !== nearestIndex && typeof current.redraw === "function") {
+      current.highlightedIndex = nearestIndex;
       current.redraw(canvas, current.payload, nearestIndex);
     }
 
@@ -178,6 +186,7 @@ function bindChartTooltip(canvas, payload, points, redraw) {
     const tooltip = getTooltip();
     tooltip.style.opacity = "0";
     const current = getChartState(canvas);
+    current.highlightedIndex = null;
     if (typeof current.redraw === "function") {
       current.redraw(canvas, current.payload);
     }
@@ -295,12 +304,12 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
   ctx.closePath();
   ctx.fill();
 
-  const labels = payload.labels || [];
+  const chartLabels = payload.labels || [];
   ctx.fillStyle = "#7e8796";
   ctx.font = '12px "Segoe UI", "Malgun Gothic", sans-serif';
-  [0, Math.floor(labels.length / 2), labels.length - 1].forEach((index) => {
-    if (labels[index] && points[index]) {
-      ctx.fillText(labels[index], points[index].x - 18, height - 10);
+  [0, Math.floor(chartLabels.length / 2), chartLabels.length - 1].forEach((index) => {
+    if (chartLabels[index] && points[index]) {
+      ctx.fillText(chartLabels[index], points[index].x - 18, height - 10);
     }
   });
 
@@ -333,6 +342,8 @@ function renderManagedChart(canvas, rawPayload) {
   const state = getChartState(canvas);
   state.rawPayload = rawPayload;
   state.activeRange = interval;
+  state.payload = derived;
+  state.highlightedIndex = null;
   drawDetailChart(canvas, derived);
 }
 
@@ -509,11 +520,11 @@ function renderTickerCard(card, stock) {
 function renderAccountRow(row, stock) {
   row.href = `/stocks/${stock.id}`;
   row.querySelector("[data-account-name]").textContent = stock.name;
-  row.querySelector("[data-account-qty]").textContent = `${stock.quantity}주`;
+  row.querySelector("[data-account-qty]").textContent = `${stock.quantity}주 · 평단 ${Number(stock.avg_price).toLocaleString("ko-KR")}원`;
   row.querySelector("[data-account-value]").textContent = formatKrw(stock.current_value);
   const profitNode = row.querySelector("[data-account-profit]");
   const prefix = stock.profit >= 0 ? "+" : "";
-  profitNode.textContent = `${prefix}${Number(stock.profit).toLocaleString("ko-KR")}원`;
+  profitNode.textContent = `${prefix}${Number(stock.profit).toLocaleString("ko-KR")}원 (${prefix}${Number(stock.profit_rate).toFixed(2)}%)`;
   profitNode.classList.remove("up", "down");
   profitNode.classList.add(stock.profit >= 0 ? "up" : "down");
 }
@@ -521,6 +532,13 @@ function renderAccountRow(row, stock) {
 function renderOrderRow(row, item) {
   row.querySelector("[data-order-type]").textContent = item.display_type;
   row.querySelector("[data-order-meta]").textContent = item.meta;
+}
+
+function renderTransferRow(row, item) {
+  row.querySelector("[data-transfer-type]").textContent = item.display_type;
+  row.querySelector("[data-transfer-meta]").textContent = item.meta;
+  const amountNode = row.querySelector(".subtle");
+  if (amountNode) amountNode.textContent = formatKrw(item.amount);
 }
 
 async function hydrateMarketSnapshot() {
@@ -556,7 +574,11 @@ async function hydrateMarketSnapshot() {
       });
 
       document.querySelectorAll("[data-order-row]").forEach((row, index) => {
-        if (payload.recent_transactions[index]) renderOrderRow(row, payload.recent_transactions[index]);
+        if (payload.recent_orders[index]) renderOrderRow(row, payload.recent_orders[index]);
+      });
+
+      document.querySelectorAll("[data-transfer-row]").forEach((row, index) => {
+        if (payload.recent_transfers[index]) renderTransferRow(row, payload.recent_transfers[index]);
       });
 
       const activeRow = document.querySelector("[data-market-row].is-active") || document.querySelector("[data-market-row]");
@@ -592,13 +614,25 @@ async function hydratePortfolioSnapshot() {
         if (!item) return;
         card.href = item.detail_url;
         card.querySelector("[data-portfolio-name]").textContent = item.name;
-        card.querySelector("[data-portfolio-qty]").textContent = `${item.quantity}주 · 평균 ${Number(item.avg_price).toLocaleString("ko-KR")}원`;
+        card.querySelector("[data-portfolio-qty]").textContent = `${item.quantity}주 보유`;
         card.querySelector("[data-portfolio-value]").textContent = formatKrw(item.current_value);
+
         const profitNode = card.querySelector("[data-portfolio-profit]");
         const prefix = item.profit >= 0 ? "+" : "";
         profitNode.textContent = `${prefix}${Number(item.profit).toLocaleString("ko-KR")}원`;
         profitNode.classList.remove("up", "down");
         profitNode.classList.add(item.profit >= 0 ? "up" : "down");
+
+        const avgNode = card.querySelector("[data-portfolio-avg]");
+        const currentNode = card.querySelector("[data-portfolio-current]");
+        const rateNode = card.querySelector("[data-portfolio-rate]");
+        if (avgNode) avgNode.textContent = formatKrw(item.avg_price);
+        if (currentNode) currentNode.textContent = formatKrw(item.current_price);
+        if (rateNode) {
+          rateNode.textContent = `${prefix}${Number(item.profit_rate).toFixed(2)}%`;
+          rateNode.classList.remove("up", "down");
+          rateNode.classList.add(item.profit >= 0 ? "up" : "down");
+        }
 
         const chart = card.querySelector("[data-portfolio-chart]");
         chart.dataset.values = item.history_prices.join(",");

@@ -8,6 +8,17 @@ from ..utils.decorators import login_required
 wallet_bp = Blueprint("wallet", __name__)
 
 
+def decorate_transfer(tx, current_user_id):
+    is_outgoing = tx["type"] == "transfer_out"
+    tx["direction_label"] = "보냄" if is_outgoing else "받음"
+    tx["direction_class"] = "outgoing" if is_outgoing else "incoming"
+    tx["from_name"] = tx["sender_name"] or "-"
+    tx["to_name"] = tx["receiver_name"] or "-"
+    tx["is_mine_sender"] = is_outgoing or tx["sender_id"] == current_user_id
+    tx["is_mine_receiver"] = (not is_outgoing) or tx["receiver_id"] == current_user_id
+    return tx
+
+
 @wallet_bp.route("/transfer", methods=["GET", "POST"])
 @login_required
 def transfer():
@@ -19,17 +30,30 @@ def transfer():
         user_row = cursor.fetchone()
         cursor.execute(
             """
-            SELECT t.*, u.display_name AS actor_name, tu.display_name AS target_name
+            SELECT t.*,
+                   sender.id AS sender_id,
+                   sender.display_name AS sender_name,
+                   receiver.id AS receiver_id,
+                   receiver.display_name AS receiver_name
             FROM transactions t
-            LEFT JOIN users u ON u.id = t.user_id
-            LEFT JOIN users tu ON tu.id = t.target_user_id
-            WHERE t.user_id=%s OR t.target_user_id=%s
+            LEFT JOIN users sender ON sender.id = CASE
+                WHEN t.type='transfer_out' THEN t.user_id
+                WHEN t.type='transfer_in' THEN t.target_user_id
+                ELSE NULL
+            END
+            LEFT JOIN users receiver ON receiver.id = CASE
+                WHEN t.type='transfer_out' THEN t.target_user_id
+                WHEN t.type='transfer_in' THEN t.user_id
+                ELSE NULL
+            END
+            WHERE t.user_id=%s
+              AND t.type IN ('transfer_in', 'transfer_out')
             ORDER BY t.created_at DESC
             LIMIT 8
             """,
-            (session["user_id"], session["user_id"]),
+            (session["user_id"],),
         )
-        transactions = cursor.fetchall()
+        transactions = [decorate_transfer(tx, session["user_id"]) for tx in cursor.fetchall()]
 
     if request.method == "POST":
         target_user_id = int(request.form.get("target_user_id", "0") or 0)
@@ -56,14 +80,27 @@ def history():
     with db.cursor() as cursor:
         cursor.execute(
             """
-            SELECT t.*, u.display_name AS actor_name, tu.display_name AS target_name
+            SELECT t.*,
+                   sender.id AS sender_id,
+                   sender.display_name AS sender_name,
+                   receiver.id AS receiver_id,
+                   receiver.display_name AS receiver_name
             FROM transactions t
-            LEFT JOIN users u ON u.id = t.user_id
-            LEFT JOIN users tu ON tu.id = t.target_user_id
-            WHERE t.user_id=%s OR t.target_user_id=%s
+            LEFT JOIN users sender ON sender.id = CASE
+                WHEN t.type='transfer_out' THEN t.user_id
+                WHEN t.type='transfer_in' THEN t.target_user_id
+                ELSE NULL
+            END
+            LEFT JOIN users receiver ON receiver.id = CASE
+                WHEN t.type='transfer_out' THEN t.target_user_id
+                WHEN t.type='transfer_in' THEN t.user_id
+                ELSE NULL
+            END
+            WHERE t.user_id=%s
+              AND t.type IN ('transfer_in', 'transfer_out')
             ORDER BY t.created_at DESC
             """,
-            (user_id, user_id),
+            (user_id,),
         )
-        transactions = cursor.fetchall()
+        transactions = [decorate_transfer(tx, session["user_id"]) for tx in cursor.fetchall()]
     return render_template("wallet/history.html", transactions=transactions)

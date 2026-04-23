@@ -23,7 +23,7 @@
     <div class="section-head">
       <div>
         <p class="eyebrow">실시간 시세</p>
-        <h2>종목 흐름</h2>
+        <h2>종목 리스트</h2>
       </div>
     </div>
     <div class="market-list" data-market-list>
@@ -57,35 +57,34 @@
         </p>
         <p class="subtle">업데이트 <span data-preview-updated-at>{{ preview_stock.latest_time_label }}</span></p>
       </div>
-      <a class="button ghost inline-btn preview-link-btn" data-preview-link href="{{ preview_stock.detail_url }}">자세히
-        보기</a>
+      <a class="button ghost inline-btn preview-link-btn" data-preview-link href="{{ preview_stock.detail_url }}">자세히 보기</a>
     </div>
     <div class="chart-wrap preview-chart-wrap">
       <canvas id="home-preview-chart" width="520" height="320" data-home-preview-chart
         data-preview-payload='{{ preview_stock.preview_json|safe }}'></canvas>
     </div>
     <div class="preview-copy">
-      <h3>지금 흐름은 왜 보일까?</h3>
-      <p>메인 화면은 5초마다 다시 갱신됩니다. 종목에 마우스를 올리면 미리보기 차트가 바뀌고, 클릭하면 상세 차트와 매수/매도 화면으로 이동합니다.</p>
+      <h3>지금 어떤 흐름인지 바로 확인</h3>
+      <p>메인 화면에서 종목에 마우스를 올리면 미리보기가 바뀌고, 클릭하면 상세 차트와 주문 화면으로 이동합니다.</p>
     </div>
     {% endif %}
   </div>
 
   <aside class="card account-sidebar">
     {% if current_user %}
-    <p class="eyebrow">내 계좌</p>
+    <p class="eyebrow">내 주식</p>
     <div class="account-currency">
       <div>
         <span>예수금</span>
         <strong data-cash-balance>{{ "{:,}".format(cash_balance) }}원</strong>
       </div>
       <div>
-        <span>평가금</span>
+        <span>주식 평가금</span>
         <strong data-stock-balance>{{ "{:,}".format(total_stock_value) }}원</strong>
       </div>
     </div>
     <div class="account-total">
-      <span>내 투자</span>
+      <span>총자산</span>
       <strong data-total-assets>{{ "{:,}".format(total_assets) }}원</strong>
     </div>
 
@@ -99,12 +98,12 @@
         <a class="account-row" href="{{ url_for('stocks.stock_detail', stock_id=item.id) }}" data-account-row>
           <div>
             <strong data-account-name>{{ item.name }}</strong>
-            <p data-account-qty>{{ item.quantity }}주</p>
+            <p data-account-qty>{{ item.quantity }}주 · 평단 {{ "{:,}".format(item.avg_price) }}원</p>
           </div>
           <div class="account-metrics">
             <strong data-account-value>{{ "{:,}".format(item.current_value) }}원</strong>
             <span class="{{ 'up' if item.profit >= 0 else 'down' }}" data-account-profit>
-              {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}원
+              {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}원 ({{ '+' if item.profit >= 0 else '' }}{{ "%.2f"|format(item.profit_rate) }}%)
             </span>
           </div>
         </a>
@@ -116,24 +115,42 @@
 
     <div class="sidebar-block">
       <div class="sidebar-head">
-        <h3>주문 내역</h3>
+        <h3>최근 주문 내역</h3>
         <a href="{{ url_for('stocks.trade_history', user_id=current_user.id) }}">전체</a>
       </div>
       <div class="order-list" data-order-list>
-        {% for tx in recent_transactions %}
+        {% for tx in recent_orders %}
         <div class="order-row" data-order-row>
           <strong data-order-type>{{ tx.display_type }}</strong>
-          <p data-order-meta>{{ tx.symbol or tx.note or '-' }}</p>
+          <p data-order-meta>{{ tx.meta }}</p>
         </div>
         {% else %}
-        <p class="empty">대기 중인 주문이 없습니다.</p>
+        <p class="empty">주문 내역이 없습니다.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sidebar-block">
+      <div class="sidebar-head">
+        <h3>최근 송금 내역</h3>
+        <a href="{{ url_for('wallet.history', user_id=current_user.id) }}">전체</a>
+      </div>
+      <div class="order-list" data-transfer-list>
+        {% for tx in recent_transfers %}
+        <div class="order-row" data-transfer-row>
+          <strong data-transfer-type>{{ tx.display_type }}</strong>
+          <p data-transfer-meta>{{ tx.meta }}</p>
+          <p class="subtle">{{ "{:,}".format(tx.amount) }}원</p>
+        </div>
+        {% else %}
+        <p class="empty">송금 내역이 없습니다.</p>
         {% endfor %}
       </div>
     </div>
     {% else %}
-    <p class="eyebrow">내 계좌</p>
+    <p class="eyebrow">내 주식</p>
     <div class="account-total guest">
-      <span>로그인 후 내 자산을 확인하세요.</span>
+      <span>로그인 후 자산과 보유 종목을 확인하세요.</span>
       <a class="button primary inline-btn" href="{{ url_for('auth.login') }}">로그인</a>
     </div>
     {% endif %}

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}포트폴리오{% endblock %}
+{% block title %}내 주식{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
     <p class="eyebrow">Portfolio</p>
-    <h1>보유 종목</h1>
+    <h1>내 주식</h1>
   </div>
 </section>
 <div class="portfolio-grid" data-portfolio-grid>
@@ -14,13 +14,29 @@
         <div>
           <p>{{ item.symbol }}</p>
           <strong data-portfolio-name>{{ item.name }}</strong>
-          <span data-portfolio-qty>{{ item.quantity }}주 · 평균 {{ "{:,}".format(item.avg_price) }}원</span>
+          <span data-portfolio-qty>{{ item.quantity }}주 보유</span>
         </div>
         <div class="portfolio-value-block">
           <strong data-portfolio-value>{{ "{:,}".format(item.current_value) }}원</strong>
           <span class="{{ 'up' if item.profit >= 0 else 'down' }}" data-portfolio-profit>
             {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}원
           </span>
+        </div>
+      </div>
+      <div class="portfolio-stats">
+        <div>
+          <span>평단가</span>
+          <strong data-portfolio-avg>{{ "{:,}".format(item.avg_price) }}원</strong>
+        </div>
+        <div>
+          <span>현재가</span>
+          <strong data-portfolio-current>{{ "{:,}".format(item.current_price) }}원</strong>
+        </div>
+        <div>
+          <span>수익률</span>
+          <strong class="{{ 'up' if item.profit >= 0 else 'down' }}" data-portfolio-rate>
+            {{ '+' if item.profit >= 0 else '' }}{{ "%.2f"|format(item.profit_rate) }}%
+          </strong>
         </div>
       </div>
       <div class="portfolio-chart-wrap">

@@ -74,11 +74,23 @@ def enrich_stock_cards(cursor, stocks):
     return enriched
 
 
+def build_order_meta(tx):
+    quantity = tx["quantity"] or 0
+    unit_price = int(tx["amount"] / max(quantity, 1))
+    return f"{tx['symbol'] or '-'} · {quantity}주 · {unit_price:,}원"
+
+
+def build_transfer_meta(tx):
+    direction = "보냄" if tx["type"] == "transfer_out" else "받음"
+    return f"{direction} · {tx['sender_name'] or '-'} → {tx['receiver_name'] or '-'}"
+
+
 def load_home_data():
     db = get_db()
     cash_balance = 0
     portfolio = []
-    recent_transactions = []
+    recent_orders = []
+    recent_transfers = []
 
     with db.cursor() as cursor:
         cursor.execute(
@@ -118,33 +130,66 @@ def load_home_data():
                 FROM transactions t
                 LEFT JOIN stocks s ON s.id = t.stock_id
                 WHERE t.user_id=%s
+                  AND t.type IN ('buy', 'sell')
                 ORDER BY t.created_at DESC
                 LIMIT 6
                 """,
                 (session["user_id"],),
             )
-            recent_transactions = cursor.fetchall()
+            recent_orders = cursor.fetchall()
+
+            cursor.execute(
+                """
+                SELECT t.*,
+                       sender.display_name AS sender_name,
+                       receiver.display_name AS receiver_name
+                FROM transactions t
+                LEFT JOIN users sender ON sender.id = CASE
+                    WHEN t.type='transfer_out' THEN t.user_id
+                    WHEN t.type='transfer_in' THEN t.target_user_id
+                    ELSE NULL
+                END
+                LEFT JOIN users receiver ON receiver.id = CASE
+                    WHEN t.type='transfer_out' THEN t.target_user_id
+                    WHEN t.type='transfer_in' THEN t.user_id
+                    ELSE NULL
+                END
+                WHERE t.user_id=%s
+                  AND t.type IN ('transfer_in', 'transfer_out')
+                ORDER BY t.created_at DESC
+                LIMIT 6
+                """,
+                (session["user_id"],),
+            )
+            recent_transfers = cursor.fetchall()
 
     total_stock_value = sum(item["current_price"] * item["quantity"] for item in portfolio)
     total_assets = cash_balance + total_stock_value
 
     for item in portfolio:
         current_value = item["current_price"] * item["quantity"]
-        profit = current_value - (item["avg_price"] * item["quantity"])
-        profit_rate = round((profit / max(item["avg_price"] * item["quantity"], 1)) * 100, 2)
+        invested_amount = item["avg_price"] * item["quantity"]
+        profit = current_value - invested_amount
+        profit_rate = round((profit / max(invested_amount, 1)) * 100, 2)
         item["current_value"] = current_value
         item["profit"] = profit
         item["profit_rate"] = profit_rate
 
-    for tx in recent_transactions:
+    for tx in recent_orders:
         tx["display_type"] = transaction_label(tx["type"])
+        tx["meta"] = build_order_meta(tx)
+
+    for tx in recent_transfers:
+        tx["display_type"] = transaction_label(tx["type"])
+        tx["meta"] = build_transfer_meta(tx)
 
     return {
         "portfolio": portfolio,
         "account_stocks": portfolio[:6],
         "stocks": stocks,
         "recent_posts": recent_posts,
-        "recent_transactions": recent_transactions,
+        "recent_orders": recent_orders,
+        "recent_transfers": recent_transfers,
         "total_assets": total_assets,
         "cash_balance": cash_balance,
         "total_stock_value": total_stock_value,
@@ -201,17 +246,27 @@ def market_snapshot():
                     "id": item["id"],
                     "name": item["name"],
                     "quantity": item["quantity"],
+                    "avg_price": item["avg_price"],
                     "current_value": item["current_value"],
                     "profit": item["profit"],
+                    "profit_rate": item["profit_rate"],
                 }
                 for item in payload["account_stocks"]
             ],
-            "recent_transactions": [
+            "recent_orders": [
                 {
                     "display_type": tx["display_type"],
-                    "meta": tx["symbol"] or tx["note"] or "-",
+                    "meta": tx["meta"],
                 }
-                for tx in payload["recent_transactions"]
+                for tx in payload["recent_orders"]
+            ],
+            "recent_transfers": [
+                {
+                    "display_type": tx["display_type"],
+                    "meta": tx["meta"],
+                    "amount": tx["amount"],
+                }
+                for tx in payload["recent_transfers"]
             ],
         }
     )

@@ -9,12 +9,18 @@
 </section>
 <div class="feed-list">
   {% for tx in transactions %}
-    <div class="feed-item">
-      <strong>{{ tx.type }}</strong>
+    <div class="feed-item transfer-feed-item">
+      <div class="transfer-title-row">
+        <strong>{{ '송금' if tx.type == 'transfer_out' else '송금 입금' }}</strong>
+        <span class="transfer-direction {{ tx.direction_class }}">{{ tx.direction_label }}</span>
+      </div>
       <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+      <div class="transfer-route">
+        <span class="{{ 'is-me' if tx.is_mine_sender else '' }}">보내는 사람: {{ tx.from_name }}</span>
+        <span class="transfer-arrow">→</span>
+        <span class="{{ 'is-me' if tx.is_mine_receiver else '' }}">받는 사람: {{ tx.to_name }}</span>
+      </div>
       <div class="meta-row">
-        <span>{{ tx.actor_name or '-' }}</span>
-        <span>{{ tx.target_name or '-' }}</span>
         <span>{{ "{:,}".format(tx.amount) }}원</span>
       </div>
       <p class="subtle">{{ tx.note or '' }}</p>

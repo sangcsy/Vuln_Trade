@@ -1,26 +1,27 @@
 {% extends "base.html" %}
-{% block title %}거래 내역{% endblock %}
+{% block title %}주문 내역{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
     <p class="eyebrow">Transactions</p>
-    <h1>거래 내역</h1>
+    <h1>주문 내역</h1>
   </div>
 </section>
 <div class="feed-list">
   {% for tx in transactions %}
     <div class="feed-item">
-      <strong>{{ tx.type }}</strong>
+      <strong>{{ '매수' if tx.type == 'buy' else '매도' }}</strong>
       <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
       <div class="meta-row">
-        <span>{{ tx.symbol or '-' }}</span>
-        <span>{{ tx.quantity or '-' }}주</span>
-        <span>{{ "{:,}".format(tx.amount) }}원</span>
+        <span>{{ tx.stock_name or tx.symbol or '-' }}</span>
+        <span>{{ tx.quantity or 0 }}주</span>
+        <span>주당 {{ "{:,}".format((tx.amount / (tx.quantity or 1))|int) }}원</span>
+        <span>총 {{ "{:,}".format(tx.amount) }}원</span>
       </div>
       {% if tx.note %}<p class="subtle">{{ tx.note }}</p>{% endif %}
     </div>
   {% else %}
-    <p class="empty">거래 내역이 없습니다.</p>
+    <p class="empty">주문 내역이 없습니다.</p>
   {% endfor %}
 </div>
 {% endblock %}

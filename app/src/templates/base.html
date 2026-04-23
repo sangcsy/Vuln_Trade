@@ -16,10 +16,10 @@
           </a>
           <nav class="nav">
             <a href="{{ url_for('main.index') }}">홈</a>
-            <a href="{{ url_for('community.list_posts') }}">피드</a>
+            <a href="{{ url_for('community.list_posts') }}">커뮤니티</a>
             {% if current_user %}
               <a href="{{ url_for('wallet.transfer') }}">송금</a>
-              <a href="{{ url_for('stocks.portfolio') }}">내 계좌</a>
+              <a href="{{ url_for('stocks.portfolio') }}">내 주식</a>
             {% endif %}
           </nav>
         </div>

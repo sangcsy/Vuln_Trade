@@ -426,6 +426,31 @@ a {
   text-align: right;
 }
 
+.portfolio-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.portfolio-stats div {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f7f9fc;
+  border: 1px solid var(--line);
+}
+
+.portfolio-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.portfolio-stats strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 17px;
+}
+
 .portfolio-chart-wrap {
   border-radius: 18px;
   background: #f7f9fc;
@@ -803,6 +828,58 @@ textarea {
   white-space: nowrap;
 }
 
+.transfer-feed-item {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.transfer-direction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.transfer-direction.outgoing {
+  background: #fff1f2;
+  color: #b42318;
+}
+
+.transfer-direction.incoming {
+  background: #eef4ff;
+  color: #1d4ed8;
+}
+
+.transfer-route {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.transfer-arrow {
+  color: #98a2b3;
+  font-weight: 800;
+}
+
+.transfer-route .is-me {
+  color: var(--text);
+  font-weight: 700;
+}
+
 @media (max-width: 1280px) {
   .market-layout {
     grid-template-columns: 1fr;
@@ -844,6 +921,7 @@ textarea {
   .market-row,
   .account-currency,
   .chart-summary,
+  .portfolio-stats,
   .detail-side {
     grid-template-columns: 1fr;
   }

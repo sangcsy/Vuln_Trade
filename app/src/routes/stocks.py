@@ -180,9 +180,10 @@ def portfolio():
         )
         holdings = attach_market_data(cursor, cursor.fetchall())
     for item in holdings:
+        invested_amount = item["avg_price"] * item["quantity"]
         item["current_value"] = item["current_price"] * item["quantity"]
-        item["profit"] = item["current_value"] - (item["avg_price"] * item["quantity"])
-        item["profit_rate"] = round((item["profit"] / max(item["avg_price"] * item["quantity"], 1)) * 100, 2)
+        item["profit"] = item["current_value"] - invested_amount
+        item["profit_rate"] = round((item["profit"] / max(invested_amount, 1)) * 100, 2)
     return render_template("stocks/portfolio.html", holdings=holdings)
 
 
@@ -206,7 +207,8 @@ def portfolio_snapshot():
     payload = []
     for item in holdings:
         current_value = item["current_price"] * item["quantity"]
-        profit = current_value - (item["avg_price"] * item["quantity"])
+        invested_amount = item["avg_price"] * item["quantity"]
+        profit = current_value - invested_amount
         payload.append(
             {
                 "id": item["id"],
@@ -218,7 +220,7 @@ def portfolio_snapshot():
                 "current_price": item["current_price"],
                 "current_value": current_value,
                 "profit": profit,
-                "profit_rate": round((profit / max(item["avg_price"] * item["quantity"], 1)) * 100, 2),
+                "profit_rate": round((profit / max(invested_amount, 1)) * 100, 2),
                 "history_prices": item["history_prices"],
                 "history_labels": item["history_labels"],
                 "history_timestamps": item["history_timestamps"],
@@ -240,6 +242,7 @@ def trade_history():
             FROM transactions t
             LEFT JOIN stocks s ON s.id = t.stock_id
             WHERE t.user_id=%s
+              AND t.type IN ('buy', 'sell')
             ORDER BY t.created_at DESC
             """,
             (user_id,),
