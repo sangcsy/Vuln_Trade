@@ -9,6 +9,30 @@ function parseValues(raw) {
     .filter((value) => Number.isFinite(value));
 }
 
+function parseLabels(raw) {
+  return (raw || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+function parseChartTimestamp(timestamp) {
+  if (!timestamp) return Number.NaN;
+  return new Date(`${String(timestamp).trim().replace(" ", "T")}Z`).getTime();
+}
+
+function formatClock(timestamp, withSeconds = true) {
+  const date = new Date(parseChartTimestamp(timestamp));
+  if (Number.isNaN(date.getTime())) return withSeconds ? "지금" : "방금";
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: withSeconds ? "2-digit" : undefined,
+    hour12: false,
+    timeZone: "Asia/Seoul",
+  }).format(date);
+}
+
 function setupCanvas(canvas) {
   const ctx = canvas.getContext("2d");
   const ratio = window.devicePixelRatio || 1;
@@ -39,13 +63,80 @@ function getTooltip() {
   return tooltip;
 }
 
-function bindChartTooltip(canvas, payload, points, bounds) {
+function buildRangePayload(payload, intervalSeconds) {
+  const prices = payload.prices || [];
+  const timestamps = payload.timestamps || [];
+  if (!timestamps.length || !prices.length || !intervalSeconds) {
+    return {
+      ...payload,
+      labels: payload.labels || [],
+      latest_time_label: payload.latest_time_label || payload.labels?.at(-1) || "지금",
+    };
+  }
+
+  const parsed = timestamps.map((value) => parseChartTimestamp(value));
+  const entries = parsed
+    .map((time, index) => ({
+      time,
+      price: Number(prices[index]),
+      timestamp: timestamps[index],
+    }))
+    .filter((entry) => Number.isFinite(entry.time) && Number.isFinite(entry.price));
+
+  if (!entries.length) {
+    return {
+      ...payload,
+      labels: payload.labels || [],
+      latest_time_label: payload.latest_time_label || payload.labels?.at(-1) || "지금",
+    };
+  }
+
+  const sampled = [];
+  let lastIncluded = Number.NEGATIVE_INFINITY;
+  const intervalMs = intervalSeconds * 1000;
+
+  entries.forEach((entry) => {
+    if (sampled.length === 0 || entry.time - lastIncluded >= intervalMs) {
+      sampled.push(entry);
+      lastIncluded = entry.time;
+    }
+  });
+
+  const latestEntry = entries.at(-1);
+  if (sampled.at(-1)?.time !== latestEntry.time) {
+    sampled.push(latestEntry);
+  }
+
+  if (sampled.length === 1 && entries.length > 1) {
+    sampled.unshift(entries[0]);
+  }
+
+  const sampledPrices = sampled.map((entry) => entry.price);
+  const sampledTimes = sampled.map((entry) => entry.timestamp);
+  const useSeconds = intervalSeconds <= 60;
+  const labels = sampledTimes.map((value) => formatClock(value, useSeconds));
+
+  return {
+    ...payload,
+    prices: sampledPrices,
+    timestamps: sampledTimes,
+    labels,
+    latest_time_label: labels.at(-1) || payload.latest_time_label || "지금",
+  };
+}
+
+function setRangeButtons(group, activeRange) {
+  group.querySelectorAll("[data-chart-range]").forEach((button) => {
+    button.classList.toggle("is-active", Number(button.dataset.chartRange) === Number(activeRange));
+  });
+}
+
+function bindChartTooltip(canvas, payload, points) {
   if (!canvas || !points || points.length === 0) return;
 
   const state = getChartState(canvas);
   state.payload = payload;
   state.points = points;
-  state.bounds = bounds;
 
   if (state.bound) return;
   state.bound = true;
@@ -72,9 +163,9 @@ function bindChartTooltip(canvas, payload, points, bounds) {
 
     drawDetailChart(canvas, current.payload, nearestIndex);
 
-    const label = current.payload.labels?.[nearestIndex] || `${nearestIndex + 1}`;
+    const label = current.payload.labels?.[nearestIndex] || formatClock(current.payload.timestamps?.[nearestIndex], true);
     const price = current.payload.prices?.[nearestIndex] || 0;
-    tooltip.textContent = `${label} · ${formatKrw(price)}`;
+    tooltip.textContent = `${label || "지금"} · ${formatKrw(price)}`;
     tooltip.style.opacity = "1";
     tooltip.style.left = `${event.clientX + 14}px`;
     tooltip.style.top = `${event.clientY - 30}px`;
@@ -88,7 +179,7 @@ function bindChartTooltip(canvas, payload, points, bounds) {
   });
 }
 
-function drawLineChart(canvas, values) {
+function drawLineChart(canvas, values, labels = []) {
   if (!canvas || values.length === 0) return;
 
   const { ctx, width, height } = setupCanvas(canvas);
@@ -127,6 +218,21 @@ function drawLineChart(canvas, values) {
   ctx.lineTo(points.at(-1).x, height - padding);
   ctx.closePath();
   ctx.fill();
+
+  bindChartTooltip(
+    canvas,
+    {
+      stock: canvas.dataset.stockName || "",
+      current_price: values.at(-1),
+      prices: values,
+      labels,
+    },
+    points
+  );
+}
+
+function drawMiniPortfolioChart(canvas, values, labels = []) {
+  drawLineChart(canvas, values, labels);
 }
 
 function drawDetailChart(canvas, payload, highlightedIndex = null) {
@@ -185,8 +291,8 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
   ctx.fillStyle = "#7e8796";
   ctx.font = '12px "Segoe UI", "Malgun Gothic", sans-serif';
   [0, Math.floor(labels.length / 2), labels.length - 1].forEach((index) => {
-    if (labels[index]) {
-      ctx.fillText(labels[index], points[index].x - 14, height - 10);
+    if (labels[index] && points[index]) {
+      ctx.fillText(labels[index], points[index].x - 18, height - 10);
     }
   });
 
@@ -209,7 +315,17 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
     ctx.fill();
   }
 
-  bindChartTooltip(canvas, payload, points, { paddingTop, paddingBottom, paddingSide, width, height });
+  bindChartTooltip(canvas, payload, points);
+}
+
+function renderManagedChart(canvas, rawPayload) {
+  if (!canvas || !rawPayload) return;
+  const interval = Number(canvas.dataset.range || 0);
+  const derived = buildRangePayload(rawPayload, interval);
+  const state = getChartState(canvas);
+  state.rawPayload = rawPayload;
+  state.activeRange = interval;
+  drawDetailChart(canvas, derived);
 }
 
 function updateLiveFields(payload) {
@@ -234,12 +350,18 @@ function updateLiveFields(payload) {
     node.classList.remove("up", "down");
     node.classList.add(isUp ? "up" : "down");
   });
+
+  document.querySelectorAll("[data-live-updated-at]").forEach((node) => {
+    node.textContent = payload.latest_time_label || formatClock(payload.timestamps?.at(-1), true);
+  });
+
+  updateTradeForms(payload.current_price);
 }
 
 function updateHomePreview(payload) {
   const canvas = document.querySelector("[data-home-preview-chart]");
   if (!canvas) return;
-  drawDetailChart(canvas, payload);
+  renderManagedChart(canvas, payload);
 
   document.querySelector("[data-preview-symbol]").textContent = payload.symbol;
   document.querySelector("[data-preview-name]").textContent = payload.stock;
@@ -251,7 +373,34 @@ function updateHomePreview(payload) {
   changeNode.classList.remove("up", "down");
   changeNode.classList.add(payload.change_amount >= 0 ? "up" : "down");
   document.querySelector("[data-preview-link]").href = payload.detail_url;
+
+  const updatedAtNode = document.querySelector("[data-preview-updated-at]");
+  if (updatedAtNode) {
+    updatedAtNode.textContent = payload.latest_time_label || formatClock(payload.timestamps?.at(-1), true);
+  }
+
   canvas.dataset.previewPayload = JSON.stringify(payload);
+}
+
+function bindRangeControls() {
+  document.querySelectorAll("[data-chart-range-group]").forEach((group) => {
+    const targetSelector = group.dataset.target;
+    const canvas = targetSelector ? document.querySelector(targetSelector) : null;
+    if (!canvas) return;
+
+    group.querySelectorAll("[data-chart-range]").forEach((button) => {
+      button.addEventListener("click", () => {
+        canvas.dataset.range = button.dataset.chartRange;
+        setRangeButtons(group, button.dataset.chartRange);
+        const state = getChartState(canvas);
+        if (state.rawPayload) {
+          renderManagedChart(canvas, state.rawPayload);
+        }
+      });
+    });
+
+    setRangeButtons(group, canvas.dataset.range || 0);
+  });
 }
 
 async function hydrateDetailChart() {
@@ -266,7 +415,7 @@ async function hydrateDetailChart() {
       const response = await fetch(endpoint, { cache: "no-store" });
       if (!response.ok) return;
       const payload = await response.json();
-      drawDetailChart(canvas, payload);
+      renderManagedChart(canvas, payload);
       updateLiveFields(payload);
     } catch (_) {
       return;
@@ -276,6 +425,34 @@ async function hydrateDetailChart() {
   await refresh();
   window.addEventListener("resize", refresh);
   setInterval(refresh, 5000);
+}
+
+function updateTradeForms(currentPrice) {
+  document.querySelectorAll("[data-trade-form]").forEach((form) => {
+    const qtyInput = form.querySelector("[data-quantity-input]");
+    const totalInput = form.querySelector("[data-total-input]");
+    if (!qtyInput || !totalInput) return;
+
+    const quantity = Math.max(Number(qtyInput.value || 0), 0);
+    totalInput.value = Math.round(quantity * Number(currentPrice || 0));
+  });
+}
+
+function bindTradeForms() {
+  document.querySelectorAll("[data-trade-form]").forEach((form) => {
+    const qtyInput = form.querySelector("[data-quantity-input]");
+    const priceNode = document.querySelector("[data-live-price-inline]");
+    if (!qtyInput) return;
+
+    const sync = () => {
+      const currentText = priceNode ? priceNode.textContent.replace(/[^\d.-]/g, "") : "0";
+      const currentPrice = Number(currentText || 0);
+      updateTradeForms(currentPrice);
+    };
+
+    qtyInput.addEventListener("input", sync);
+    sync();
+  });
 }
 
 function hydrateHomePreview() {
@@ -389,6 +566,46 @@ async function hydrateMarketSnapshot() {
   setInterval(refresh, 5000);
 }
 
+async function hydratePortfolioSnapshot() {
+  const endpointNode = document.querySelector("#portfolio-snapshot-endpoint");
+  if (!endpointNode) return;
+
+  const endpoint = endpointNode.textContent.trim();
+  if (!endpoint) return;
+
+  const refresh = async () => {
+    try {
+      const response = await fetch(endpoint, { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json();
+
+      document.querySelectorAll("[data-portfolio-card]").forEach((card, index) => {
+        const item = payload.holdings[index];
+        if (!item) return;
+        card.href = item.detail_url;
+        card.querySelector("[data-portfolio-name]").textContent = item.name;
+        card.querySelector("[data-portfolio-qty]").textContent = `${item.quantity}주 · 평균 ${Number(item.avg_price).toLocaleString("ko-KR")}원`;
+        card.querySelector("[data-portfolio-value]").textContent = formatKrw(item.current_value);
+        const profitNode = card.querySelector("[data-portfolio-profit]");
+        const prefix = item.profit >= 0 ? "+" : "";
+        profitNode.textContent = `${prefix}${Number(item.profit).toLocaleString("ko-KR")}원`;
+        profitNode.classList.remove("up", "down");
+        profitNode.classList.add(item.profit >= 0 ? "up" : "down");
+
+        const chart = card.querySelector("[data-portfolio-chart]");
+        chart.dataset.values = item.history_prices.join(",");
+        chart.dataset.labels = item.history_labels.join(",");
+        drawMiniPortfolioChart(chart, item.history_prices, item.history_labels);
+      });
+    } catch (_) {
+      return;
+    }
+  };
+
+  await refresh();
+  setInterval(refresh, 5000);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".flash").forEach((item) => {
     setTimeout(() => {
@@ -398,10 +615,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.querySelectorAll(".sparkline").forEach((canvas) => {
-    drawLineChart(canvas, parseValues(canvas.dataset.values));
+    drawLineChart(canvas, parseValues(canvas.dataset.values), parseLabels(canvas.dataset.labels));
   });
 
+  document.querySelectorAll("[data-portfolio-chart]").forEach((canvas) => {
+    drawMiniPortfolioChart(canvas, parseValues(canvas.dataset.values), parseLabels(canvas.dataset.labels));
+  });
+
+  bindRangeControls();
   hydrateHomePreview();
   hydrateDetailChart();
   hydrateMarketSnapshot();
+  hydratePortfolioSnapshot();
+  bindTradeForms();
 });

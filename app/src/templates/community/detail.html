@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
 <article class="card post-detail">
@@ -8,11 +8,11 @@
       <h1>{{ post.title }}</h1>
       <p class="subtle">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
     </div>
-    {% if current_user %}
+    {% if current_user and current_user.id == post.user_id %}
       <div class="action-row">
-        <a class="button ghost inline-btn" href="{{ url_for('community.edit', post_id=post.id) }}">수정</a>
+        <a class="button primary inline-btn action-chip" href="{{ url_for('community.edit', post_id=post.id) }}">수정</a>
         <form method="post" action="{{ url_for('community.delete', post_id=post.id) }}">
-          <button type="submit" class="button dark inline-btn">삭제</button>
+          <button type="submit" class="button dark inline-btn action-chip">삭제</button>
         </form>
       </div>
     {% endif %}
@@ -42,7 +42,7 @@
   </div>
   {% if current_user %}
     <form method="post" action="{{ url_for('community.write_comment', post_id=post.id) }}" class="form-card compact">
-      <textarea name="content" rows="4" placeholder="생각을 남겨보세요"></textarea>
+      <textarea name="content" rows="4" placeholder="생각을 남겨보세요."></textarea>
       <button type="submit" class="button primary">댓글 등록</button>
     </form>
   {% endif %}

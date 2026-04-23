@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block title %}User Directory{% endblock %}
+{% block title %}사용자 관리{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
     <p class="eyebrow">Admin</p>
-    <h1>User Directory</h1>
+    <h1>사용자 디렉터리</h1>
   </div>
 </section>
 
 <section class="card">
   <form method="get" class="form-card compact">
-    <label>Search user</label>
-    <input type="text" name="q" value="{{ q or '' }}" placeholder="username or display name">
-    <button type="submit" class="button primary inline-btn">Search</button>
+    <label>사용자 검색</label>
+    <input type="text" name="q" value="{{ q or '' }}" placeholder="아이디 또는 표시 이름">
+    <button type="submit" class="button primary inline-btn action-chip">검색</button>
   </form>
 </section>
 
-<div class="feed">
+<div class="feed-list">
   {% for user in users %}
     <div class="feed-item">
       <strong>{{ user.display_name }} ({{ user.username }})</strong>
@@ -27,7 +27,7 @@
       </div>
     </div>
   {% else %}
-    <p class="empty">No users found.</p>
+    <p class="empty">조회된 사용자가 없습니다.</p>
   {% endfor %}
 </div>
 {% endblock %}

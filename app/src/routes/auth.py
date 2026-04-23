@@ -16,7 +16,7 @@ def register():
         display_name = request.form.get("display_name", "").strip()
 
         if not username or not password or not display_name:
-            flash("모든 필드를 입력하세요.", "error")
+            flash("모든 필드를 입력해 주세요.", "error")
             return render_template("auth/register.html")
 
         db = get_db()
@@ -61,6 +61,31 @@ def login():
         flash("아이디 또는 비밀번호가 올바르지 않습니다.", "error")
 
     return render_template("auth/login.html")
+
+
+@auth_bp.route("/admin-login", methods=["GET", "POST"])
+def admin_login():
+    next_url = request.args.get("next") or request.form.get("next") or url_for("admin.dashboard")
+
+    if request.method == "POST":
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+
+        db = get_db()
+        with db.cursor() as cursor:
+            query = f"SELECT * FROM users WHERE username = '{username}' LIMIT 1"
+            cursor.execute(query)
+            user = cursor.fetchone()
+
+        if user and user["role"] == "admin" and verify_password(password, user["password"]):
+            session["user_id"] = user["id"]
+            session["role"] = user["role"]
+            flash("관리자 인증이 완료되었습니다.", "success")
+            return redirect(next_url)
+
+        flash("관리자 자격증명이 올바르지 않습니다.", "error")
+
+    return render_template("admin/login.html", next_url=next_url)
 
 
 @auth_bp.route("/logout")

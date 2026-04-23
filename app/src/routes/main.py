@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
@@ -7,6 +8,8 @@ from ..utils.decorators import login_required
 
 
 main_bp = Blueprint("main", __name__)
+
+HOME_HISTORY_LIMIT = 60
 
 
 def transaction_label(tx_type):
@@ -18,6 +21,13 @@ def transaction_label(tx_type):
     }.get(tx_type, tx_type)
 
 
+def history_payload(history_rows, current_price, time_format="%H:%M:%S"):
+    prices = [row["current_price"] for row in history_rows] or [current_price]
+    timestamps = [row["recorded_at"].strftime("%Y-%m-%d %H:%M:%S") for row in history_rows]
+    labels = [row["recorded_at"].strftime(time_format) for row in history_rows] or ["지금"]
+    return prices, timestamps, labels
+
+
 def enrich_stock_cards(cursor, stocks):
     enriched = []
     for stock in stocks:
@@ -27,12 +37,12 @@ def enrich_stock_cards(cursor, stocks):
             FROM stock_price_history
             WHERE stock_id=%s
             ORDER BY recorded_at DESC
-            LIMIT 30
+            LIMIT %s
             """,
-            (stock["id"],),
+            (stock["id"], HOME_HISTORY_LIMIT),
         )
         history_rows = list(reversed(cursor.fetchall()))
-        prices = [row["current_price"] for row in history_rows] or [stock["current_price"]]
+        prices, timestamps, labels = history_payload(history_rows, stock["current_price"])
         previous_price = prices[-2] if len(prices) > 1 else prices[-1]
         change_amount = stock["current_price"] - previous_price
         change_rate = round((change_amount / previous_price) * 100, 2) if previous_price else 0
@@ -41,7 +51,10 @@ def enrich_stock_cards(cursor, stocks):
         stock["change_amount"] = change_amount
         stock["change_rate"] = change_rate
         stock["history_prices"] = prices
+        stock["history_labels"] = labels
+        stock["history_timestamps"] = timestamps
         stock["detail_url"] = url_for("stocks.stock_detail", stock_id=stock["id"])
+        stock["latest_time_label"] = labels[-1] if labels else datetime.now().strftime("%H:%M:%S")
         stock["preview_json"] = json.dumps(
             {
                 "stock": stock["name"],
@@ -50,8 +63,10 @@ def enrich_stock_cards(cursor, stocks):
                 "change_amount": change_amount,
                 "change_rate": change_rate,
                 "prices": prices,
-                "labels": [str(index + 1) for index in range(len(prices))],
+                "labels": labels,
+                "timestamps": timestamps,
                 "detail_url": stock["detail_url"],
+                "latest_time_label": stock["latest_time_label"],
             },
             ensure_ascii=False,
         )
@@ -170,8 +185,11 @@ def market_snapshot():
                     "change_amount": stock["change_amount"],
                     "change_rate": stock["change_rate"],
                     "history_prices": stock["history_prices"],
+                    "history_labels": stock["history_labels"],
+                    "history_timestamps": stock["history_timestamps"],
                     "preview_json": stock["preview_json"],
                     "detail_url": stock["detail_url"],
+                    "latest_time_label": stock["latest_time_label"],
                 }
                 for stock in payload["stocks"]
             ],
@@ -212,7 +230,7 @@ def profile():
         profile = cursor.fetchone()
 
     if not profile:
-        flash("User not found.", "error")
+        flash("사용자를 찾을 수 없습니다.", "error")
         return redirect(url_for("main.index"))
 
     return render_template("mypage/profile.html", profile=profile)

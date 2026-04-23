@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}관리자 대시보드{% endblock %}
 {% block content %}
-<section class="grid two">
+<section class="grid two admin-grid">
   <div class="card metric-card">
     <p class="eyebrow">Users</p>
     <h1>{{ users_count }}</h1>
@@ -20,18 +20,18 @@
   </div>
 </section>
 
-<section class="grid two">
+<section class="grid two admin-grid">
   <a class="card row-link" href="{{ url_for('admin.users') }}">
     <strong>사용자 관리</strong>
-    <p class="subtle">가입 사용자와 권한 확인</p>
+    <p class="subtle">전체 사용자와 역할을 확인합니다.</p>
   </a>
   <a class="card row-link" href="{{ url_for('admin.transactions') }}">
     <strong>거래 내역</strong>
-    <p class="subtle">전체 거래와 송금 흐름</p>
+    <p class="subtle">전체 거래와 송금 흐름을 확인합니다.</p>
   </a>
   <a class="card row-link" href="{{ url_for('admin.posts') }}">
     <strong>게시글 관리</strong>
-    <p class="subtle">커뮤니티 게시물 확인</p>
+    <p class="subtle">커뮤니티 게시글을 확인합니다.</p>
   </a>
 </section>
 {% endblock %}

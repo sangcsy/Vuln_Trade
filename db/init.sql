@@ -97,7 +97,7 @@ CREATE TABLE files (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO users (username, password, display_name, balance, role) VALUES
-('admin', '240be518fabd2724ddb6f04eeb9f92b8b9f15be8d93b2ef1f0f5106a7d3d3b4f', '총괄관리자', 5000000, 'admin'),
+('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', '총괄관리자', 5000000, 'admin'),
 ('user1', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', '김민준', 1200000, 'user'),
 ('user2', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', '박서윤', 900000, 'user');
 

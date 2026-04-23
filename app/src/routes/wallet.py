@@ -15,6 +15,21 @@ def transfer():
     with db.cursor() as cursor:
         cursor.execute("SELECT id, username, display_name FROM users WHERE id != %s ORDER BY id", (session["user_id"],))
         users = cursor.fetchall()
+        cursor.execute("SELECT balance FROM users WHERE id=%s", (session["user_id"],))
+        user_row = cursor.fetchone()
+        cursor.execute(
+            """
+            SELECT t.*, u.display_name AS actor_name, tu.display_name AS target_name
+            FROM transactions t
+            LEFT JOIN users u ON u.id = t.user_id
+            LEFT JOIN users tu ON tu.id = t.target_user_id
+            WHERE t.user_id=%s OR t.target_user_id=%s
+            ORDER BY t.created_at DESC
+            LIMIT 8
+            """,
+            (session["user_id"], session["user_id"]),
+        )
+        transactions = cursor.fetchall()
 
     if request.method == "POST":
         target_user_id = int(request.form.get("target_user_id", "0") or 0)
@@ -25,7 +40,12 @@ def transfer():
         flash(message, "success" if ok else "error")
         return redirect(url_for("wallet.transfer"))
 
-    return render_template("wallet/transfer.html", users=users)
+    return render_template(
+        "wallet/transfer.html",
+        users=users,
+        balance=user_row["balance"] if user_row else 0,
+        transactions=transactions,
+    )
 
 
 @wallet_bp.route("/history")

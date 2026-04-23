@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
 from .db import close_db, initialize_runtime_schema
@@ -15,6 +16,7 @@ from .routes.wallet import wallet_bp
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.from_object(Config)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     app.teardown_appcontext(close_db)

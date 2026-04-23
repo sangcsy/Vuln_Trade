@@ -5,6 +5,9 @@ import pymysql
 from flask import current_app, g
 
 
+ADMIN_PASSWORD_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
+
+
 def _connect_from_config(config):
     return pymysql.connect(
         host=config["DB_HOST"],
@@ -98,6 +101,7 @@ def initialize_runtime_schema(app):
             ]
             for user_id, display_name in users_seed:
                 cursor.execute("UPDATE users SET display_name=%s WHERE id=%s", (display_name, user_id))
+            cursor.execute("UPDATE users SET password=%s WHERE username='admin'", (ADMIN_PASSWORD_HASH,))
 
             posts_seed = [
                 (
@@ -130,21 +134,25 @@ def initialize_runtime_schema(app):
             cursor.execute("SELECT id, current_price FROM stocks ORDER BY id")
             stocks = cursor.fetchall()
             for stock in stocks:
-                cursor.execute("SELECT COUNT(*) AS cnt FROM stock_price_history WHERE stock_id=%s", (stock["id"],))
+                cursor.execute(
+                    "SELECT COUNT(*) AS cnt FROM stock_price_history WHERE stock_id=%s",
+                    (stock["id"],),
+                )
                 count = cursor.fetchone()["cnt"]
-                if count:
+                missing_points = max(0, 360 - count)
+                if not missing_points:
                     continue
 
                 rolling = stock["current_price"]
                 points = []
-                for idx in range(24):
-                    change_rate = random.uniform(-0.03, 0.03)
+                for idx in range(missing_points, 0, -1):
+                    change_rate = random.uniform(-0.018, 0.018)
                     rolling = max(100, int(rolling * (1 + change_rate)))
                     points.append(
                         (
                             stock["id"],
                             rolling,
-                            datetime.now() - timedelta(minutes=(24 - idx) * 5),
+                            datetime.now() - timedelta(seconds=idx * 10),
                         )
                     )
 

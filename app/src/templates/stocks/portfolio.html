@@ -7,16 +7,36 @@
     <h1>보유 종목</h1>
   </div>
 </section>
-<div class="watch-grid">
+<div class="portfolio-grid" data-portfolio-grid>
   {% for item in holdings %}
-    <div class="watch-card">
-      <p>{{ item.symbol }}</p>
-      <strong>{{ item.name }}</strong>
-      <div class="price-lg">{{ "{:,}".format(item.current_price * item.quantity) }}원</div>
-      <span>{{ item.quantity }}주 · 평균 {{ "{:,}".format(item.avg_price) }}원</span>
-    </div>
+    <a class="portfolio-card" href="{{ url_for('stocks.stock_detail', stock_id=item.stock_id) }}" data-portfolio-card>
+      <div class="portfolio-meta">
+        <div>
+          <p>{{ item.symbol }}</p>
+          <strong data-portfolio-name>{{ item.name }}</strong>
+          <span data-portfolio-qty>{{ item.quantity }}주 · 평균 {{ "{:,}".format(item.avg_price) }}원</span>
+        </div>
+        <div class="portfolio-value-block">
+          <strong data-portfolio-value>{{ "{:,}".format(item.current_value) }}원</strong>
+          <span class="{{ 'up' if item.profit >= 0 else 'down' }}" data-portfolio-profit>
+            {{ '+' if item.profit >= 0 else '' }}{{ "{:,}".format(item.profit) }}원
+          </span>
+        </div>
+      </div>
+      <div class="portfolio-chart-wrap">
+        <canvas
+          class="portfolio-mini-chart"
+          width="220"
+          height="88"
+          data-portfolio-chart
+          data-values="{{ item.history_prices|join(',') }}"
+          data-labels="{{ item.history_labels|join(',') }}"
+        ></canvas>
+      </div>
+    </a>
   {% else %}
     <p class="empty">보유 종목이 없습니다.</p>
   {% endfor %}
 </div>
+<script id="portfolio-snapshot-endpoint" type="application/json">{{ url_for('stocks.portfolio_snapshot') }}</script>
 {% endblock %}

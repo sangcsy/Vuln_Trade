@@ -1,14 +1,15 @@
 from flask import Blueprint, render_template, request
 
 from ..db import get_db
-from ..utils.decorators import login_required
+from ..utils.decorators import admin_required
 
 
 admin_bp = Blueprint("admin", __name__)
 
 
+@admin_bp.route("")
 @admin_bp.route("/")
-@login_required
+@admin_required
 def dashboard():
     db = get_db()
     with db.cursor() as cursor:
@@ -31,7 +32,7 @@ def dashboard():
 
 
 @admin_bp.route("/users")
-@login_required
+@admin_required
 def users():
     q = request.args.get("q", "")
     db = get_db()
@@ -53,7 +54,7 @@ def users():
 
 
 @admin_bp.route("/transactions")
-@login_required
+@admin_required
 def transactions():
     db = get_db()
     with db.cursor() as cursor:
@@ -73,7 +74,7 @@ def transactions():
 
 
 @admin_bp.route("/posts")
-@login_required
+@admin_required
 def posts():
     db = get_db()
     with db.cursor() as cursor:

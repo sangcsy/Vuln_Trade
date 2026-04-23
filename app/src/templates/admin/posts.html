@@ -7,12 +7,14 @@
     <h1>게시글 관리</h1>
   </div>
 </section>
-<div class="feed">
+<div class="feed-list">
   {% for post in posts %}
     <a class="feed-item" href="{{ url_for('community.detail', post_id=post.id) }}">
       <strong>{{ post.title }}</strong>
       <p>{{ post.display_name }} · {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
     </a>
+  {% else %}
+    <p class="empty">게시글이 없습니다.</p>
   {% endfor %}
 </div>
 {% endblock %}

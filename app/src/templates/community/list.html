@@ -1,13 +1,13 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}피드{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
-    <p class="eyebrow">투자 커뮤니티</p>
+    <p class="eyebrow">사용자 커뮤니티</p>
     <h1>실시간 피드</h1>
   </div>
   {% if current_user %}
-    <a class="button primary inline-btn" href="{{ url_for('community.write') }}">글쓰기</a>
+    <a class="button primary inline-btn action-chip feed-write-btn" href="{{ url_for('community.write') }}">글쓰기</a>
   {% endif %}
 </section>
 <div class="feed-grid">

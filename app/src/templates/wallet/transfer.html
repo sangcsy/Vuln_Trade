@@ -2,17 +2,48 @@
 {% block title %}송금{% endblock %}
 {% block content %}
 <section class="transfer-shell">
-  <div class="card transfer-intro">
-    <p class="eyebrow">간편 송금</p>
-    <h1>잔액 보내기</h1>
-    <p class="subtle">같은 플랫폼 사용자에게 바로 송금할 수 있습니다.</p>
-    <div class="quick-actions">
-      <a class="button ghost inline-btn" href="{{ url_for('wallet.history', user_id=current_user.id) }}">송금 내역</a>
-      <a class="button ghost inline-btn" href="{{ url_for('main.profile', user_id=current_user.id) }}">내 자산 보기</a>
+  <div class="transfer-left-column">
+    <div class="card transfer-intro compact">
+      <p class="eyebrow">간편 송금</p>
+      <h1>잔액 보내기</h1>
+      <div class="transfer-balance compact">
+        <span>송금 가능한 자산</span>
+        <strong>{{ "{:,}".format(balance) }}원</strong>
+      </div>
+    </div>
+
+    <div class="card transfer-history-card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Wallet</p>
+          <h2>최근 송금 내역</h2>
+          <p class="subtle">이 영역 안에서만 스크롤됩니다.</p>
+        </div>
+      </div>
+      <div class="feed-list transfer-history-list">
+        {% for tx in transactions %}
+          <div class="feed-item">
+            <strong>
+              {% if tx.type == 'transfer_in' %}송금 입금{% elif tx.type == 'transfer_out' %}송금{% else %}{{ tx.type }}{% endif %}
+            </strong>
+            <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            <div class="meta-row">
+              <span>{{ tx.actor_name or '-' }}</span>
+              <span>{{ tx.target_name or '-' }}</span>
+              <span>{{ "{:,}".format(tx.amount) }}원</span>
+            </div>
+            <p class="subtle">{{ tx.note or '' }}</p>
+          </div>
+        {% else %}
+          <p class="empty">송금 내역이 없습니다.</p>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
   <form method="post" class="card form-card transfer-form">
+    <p class="eyebrow">송금 실행</p>
+    <h2>보낼 대상과 금액</h2>
     <label>받는 사람</label>
     <select name="target_user_id">
       {% for user in users %}

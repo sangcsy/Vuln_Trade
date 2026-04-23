@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}글쓰기{% endblock %}
 {% block content %}
 <section class="card">
@@ -8,9 +8,11 @@
     <input type="text" name="title">
     <label>본문</label>
     <textarea name="content" rows="10"></textarea>
-    <label>첨부파일</label>
+    <label>첨부 파일</label>
     <input type="file" name="attachment">
-    <button type="submit" class="button primary">등록하기</button>
+    <div class="form-actions">
+      <button type="submit" class="button primary inline-btn action-chip">등록하기</button>
+    </div>
   </form>
 </section>
 {% endblock %}

@@ -171,26 +171,6 @@ a {
   min-height: 100%;
 }
 
-.market-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.market-tabs span {
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: #f1f4f9;
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.market-tabs .active {
-  background: #e9f0ff;
-  color: var(--blue);
-}
-
 .market-row {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) 120px 80px;
@@ -286,10 +266,10 @@ a {
 .account-total strong {
   display: block;
   margin-top: 8px;
-  font-size: clamp(20px, 2vw, 26px);
+  font-size: clamp(16px, 1.4vw, 22px);
   letter-spacing: -0.04em;
   line-height: 1.15;
-  word-break: break-all;
+  white-space: nowrap;
 }
 
 .account-total {
@@ -299,6 +279,44 @@ a {
 .account-total.guest {
   display: grid;
   gap: 16px;
+}
+
+.transfer-balance {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #f7f9fc;
+  border: 1px solid var(--line);
+}
+
+.transfer-balance.compact {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.transfer-balance span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.transfer-balance strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.transfer-history-card {
+  display: grid;
+  gap: 12px;
+  min-height: 520px;
+}
+
+.transfer-history-list {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .sidebar-block + .sidebar-block {
@@ -332,6 +350,51 @@ a {
 
 .feed-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.portfolio-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.portfolio-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.portfolio-meta p,
+.portfolio-meta span {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.portfolio-value-block {
+  text-align: right;
+}
+
+.portfolio-chart-wrap {
+  border-radius: 18px;
+  background: #f7f9fc;
+  border: 1px solid var(--line);
+  padding: 10px;
+}
+
+.portfolio-mini-chart {
+  width: 100%;
+  height: 88px;
+  display: block;
 }
 
 .feed-card,
@@ -462,6 +525,22 @@ h2 {
   gap: 12px;
 }
 
+.action-row {
+  align-items: center;
+  gap: 10px;
+}
+
+.action-row form {
+  margin: 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 input,
 textarea,
 select {
@@ -490,6 +569,13 @@ textarea {
   cursor: pointer;
 }
 
+.action-chip {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  min-height: 38px;
+}
+
 .button.primary {
   background: var(--red);
   color: #fff;
@@ -505,13 +591,51 @@ textarea {
   color: var(--dark);
 }
 
-.preview-link-btn {
+.button.subtle-action {
   padding: 10px 14px;
+  border-radius: 16px;
+  background: #eef2f7;
+  color: var(--dark);
   font-size: 13px;
+  min-height: 38px;
+}
+
+.preview-link-btn {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 14px;
+}
+
+.chart-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.range-pill {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f3f6fb;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.range-pill.is-active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
 }
 
 .inline-btn {
   width: auto;
+}
+
+.feed-write-btn {
+  margin-left: 16px;
 }
 
 .flash-wrap {
@@ -551,7 +675,17 @@ textarea {
 }
 
 .transfer-shell {
-  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.9fr);
+  align-items: start;
+}
+
+.transfer-left-column {
+  display: grid;
+  gap: 16px;
+}
+
+.transfer-intro.compact {
+  padding-bottom: 22px;
 }
 
 .attachment-list {
@@ -565,6 +699,18 @@ textarea {
   padding: 10px 14px;
   border-radius: 999px;
   background: #eef3fa;
+}
+
+.grid.two.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.metric-card,
+.row-link {
+  min-height: 120px;
 }
 
 .empty {
@@ -594,7 +740,9 @@ textarea {
 
   .ticker-row,
   .feed-grid,
-  .transfer-shell {
+  .transfer-shell,
+  .portfolio-grid,
+  .grid.two.admin-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -617,6 +765,10 @@ textarea {
 
   .search-shell {
     min-width: 100%;
+  }
+
+  .feed-write-btn {
+    margin-left: 0;
   }
 
   .market-row,

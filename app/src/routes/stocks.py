@@ -7,30 +7,44 @@ from ..utils.decorators import login_required
 
 stocks_bp = Blueprint("stocks", __name__)
 
+LIST_HISTORY_LIMIT = 60
+DETAIL_HISTORY_LIMIT = 420
 
-def attach_market_data(cursor, stocks):
+
+def build_history_bundle(history_rows, current_price, time_format="%H:%M:%S"):
+    prices = [row["current_price"] for row in history_rows] or [current_price]
+    timestamps = [row["recorded_at"].strftime("%Y-%m-%d %H:%M:%S") for row in history_rows]
+    labels = [row["recorded_at"].strftime(time_format) for row in history_rows] or ["지금"]
+    return prices, labels, timestamps
+
+
+def attach_market_data(cursor, stocks, history_limit=LIST_HISTORY_LIMIT):
     result = []
     for stock in stocks:
+        ref_stock_id = stock.get("stock_id", stock["id"])
         cursor.execute(
             """
             SELECT current_price, recorded_at
             FROM stock_price_history
             WHERE stock_id=%s
             ORDER BY recorded_at DESC
-            LIMIT 30
+            LIMIT %s
             """,
-            (stock["id"],),
+            (ref_stock_id, history_limit),
         )
         history_rows = list(reversed(cursor.fetchall()))
-        prices = [row["current_price"] for row in history_rows] or [stock["current_price"]]
+        prices, labels, timestamps = build_history_bundle(history_rows, stock["current_price"])
         previous_price = prices[-2] if len(prices) > 1 else prices[-1]
         change_amount = stock["current_price"] - previous_price
         change_rate = round((change_amount / previous_price) * 100, 2) if previous_price else 0
 
         stock["history_prices"] = prices
+        stock["history_labels"] = labels
+        stock["history_timestamps"] = timestamps
         stock["previous_price"] = previous_price
         stock["change_amount"] = change_amount
         stock["change_rate"] = change_rate
+        stock["latest_time_label"] = labels[-1] if labels else "지금"
         result.append(stock)
     return result
 
@@ -52,7 +66,7 @@ def stock_detail(stock_id):
         stock = cursor.fetchone()
         holding = None
         if stock:
-            stock = attach_market_data(cursor, [stock])[0]
+            stock = attach_market_data(cursor, [stock], history_limit=DETAIL_HISTORY_LIMIT)[0]
         if session.get("user_id"):
             cursor.execute(
                 "SELECT * FROM holdings WHERE user_id=%s AND stock_id=%s",
@@ -74,7 +88,7 @@ def stock_detail(stock_id):
         action = request.form.get("action")
 
         if quantity <= 0:
-            flash("수량을 확인하세요.", "error")
+            flash("수량을 확인해 주세요.", "error")
             return redirect(url_for("stocks.stock_detail", stock_id=stock_id))
 
         if action == "buy":
@@ -99,18 +113,17 @@ def chart_data(stock_id):
 
         cursor.execute(
             """
-            SELECT current_price, DATE_FORMAT(recorded_at, '%%H:%%i') AS label
+            SELECT current_price, recorded_at
             FROM stock_price_history
             WHERE stock_id=%s
             ORDER BY recorded_at DESC
-            LIMIT 30
+            LIMIT %s
             """,
-            (stock_id,),
+            (stock_id, DETAIL_HISTORY_LIMIT),
         )
         rows = list(reversed(cursor.fetchall()))
 
-    prices = [row["current_price"] for row in rows] or [stock["current_price"]]
-    labels = [row["label"] for row in rows] or ["지금"]
+    prices, labels, timestamps = build_history_bundle(rows, stock["current_price"])
     previous_price = prices[-2] if len(prices) > 1 else prices[-1]
     change_amount = stock["current_price"] - previous_price
     change_rate = round((change_amount / previous_price) * 100, 2) if previous_price else 0
@@ -123,7 +136,9 @@ def chart_data(stock_id):
             "change_amount": change_amount,
             "change_rate": change_rate,
             "labels": labels,
+            "timestamps": timestamps,
             "prices": prices,
+            "latest_time_label": labels[-1] if labels else "지금",
         }
     )
 
@@ -143,8 +158,54 @@ def portfolio():
             """,
             (session["user_id"],),
         )
-        holdings = cursor.fetchall()
+        holdings = attach_market_data(cursor, cursor.fetchall())
+    for item in holdings:
+        item["current_value"] = item["current_price"] * item["quantity"]
+        item["profit"] = item["current_value"] - (item["avg_price"] * item["quantity"])
+        item["profit_rate"] = round((item["profit"] / max(item["avg_price"] * item["quantity"], 1)) * 100, 2)
     return render_template("stocks/portfolio.html", holdings=holdings)
+
+
+@stocks_bp.route("/portfolio-snapshot")
+@login_required
+def portfolio_snapshot():
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT h.*, s.name, s.symbol, s.current_price
+            FROM holdings h
+            JOIN stocks s ON s.id = h.stock_id
+            WHERE h.user_id=%s
+            ORDER BY s.name
+            """,
+            (session["user_id"],),
+        )
+        holdings = attach_market_data(cursor, cursor.fetchall())
+
+    payload = []
+    for item in holdings:
+        current_value = item["current_price"] * item["quantity"]
+        profit = current_value - (item["avg_price"] * item["quantity"])
+        payload.append(
+            {
+                "id": item["id"],
+                "stock_id": item["stock_id"],
+                "name": item["name"],
+                "symbol": item["symbol"],
+                "quantity": item["quantity"],
+                "avg_price": item["avg_price"],
+                "current_price": item["current_price"],
+                "current_value": current_value,
+                "profit": profit,
+                "profit_rate": round((profit / max(item["avg_price"] * item["quantity"], 1)) * 100, 2),
+                "history_prices": item["history_prices"],
+                "history_labels": item["history_labels"],
+                "history_timestamps": item["history_timestamps"],
+                "detail_url": url_for("stocks.stock_detail", stock_id=item["stock_id"]),
+            }
+        )
+    return jsonify({"holdings": payload})
 
 
 @stocks_bp.route("/history")

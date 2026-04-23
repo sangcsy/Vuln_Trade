@@ -7,7 +7,7 @@
     <h1>전체 거래 내역</h1>
   </div>
 </section>
-<div class="feed">
+<div class="feed-list">
   {% for tx in transactions %}
     <div class="feed-item">
       <strong>{{ tx.type }}</strong>
@@ -18,6 +18,8 @@
         <span>{{ "{:,}".format(tx.amount) }}원</span>
       </div>
     </div>
+  {% else %}
+    <p class="empty">거래 내역이 없습니다.</p>
   {% endfor %}
 </div>
 {% endblock %}
