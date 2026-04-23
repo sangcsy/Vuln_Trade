@@ -30,11 +30,15 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -T 10 -p "$EC2_PORT" "$EC2_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Deploy with Docker Compose
         run: |
-          ssh -i ~/.ssh/deploy_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+          ssh -i ~/.ssh/deploy_key \
+            -p "$EC2_PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=30 \
+            "$EC2_USER@$EC2_HOST" \
             "set -e
              APP_DIR=\"$APP_DIR\"
              if [ -z \"\$APP_DIR\" ]; then
