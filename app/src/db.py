@@ -79,6 +79,10 @@ def initialize_runtime_schema(app):
                 ("대한모터스", "DHM", 58700),
                 ("한결바이오", "HGB", 44200),
                 ("네오핀테크", "NEO", 73100),
+                ('경석네트워크', 'KSN', 95000),
+                ('민성게임즈', 'MSG', 68000),
+                ('승원토건', 'SWC', 42000),
+                ('슬로우푸드', 'SLF', 31000),
             ]
             for name, symbol, price in stocks_seed:
                 cursor.execute("SELECT id FROM stocks WHERE symbol=%s", (symbol,))

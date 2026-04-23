@@ -57,11 +57,19 @@ a {
 .ticker-card,
 .account-row {
   display: flex;
+  align-items: center;
+}
+
+.meta-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 13px;
 }
 
 .topbar-inner {
   min-height: 78px;
-  align-items: center;
   justify-content: space-between;
   gap: 24px;
 }
@@ -136,10 +144,12 @@ a {
 .detail-main,
 .detail-side,
 .transfer-shell,
-.market-layout,
-.market-list,
-.account-list,
-.order-list {
+.market-list {
+  display: grid;
+  gap: 18px;
+}
+
+.market-layout {
   display: grid;
   gap: 18px;
 }
@@ -155,13 +165,17 @@ a {
   padding: 18px 20px;
 }
 
+.ticker-card strong {
+  white-space: nowrap;
+}
+
 .ticker-value {
   text-align: right;
 }
 
 .market-layout {
   grid-template-columns: minmax(420px, 1.1fr) minmax(420px, 0.9fr) 360px;
-  align-items: start;
+  align-items: stretch;
   margin-bottom: 24px;
 }
 
@@ -169,6 +183,7 @@ a {
 .preview-panel,
 .account-sidebar {
   min-height: 100%;
+  height: 100%;
 }
 
 .market-row {
@@ -319,7 +334,34 @@ a {
   padding-right: 6px;
 }
 
-.sidebar-block + .sidebar-block {
+.market-board {
+  display: flex;
+  flex-direction: column;
+  height: 720px;
+}
+
+.market-list {
+  display: grid;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.account-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.order-list {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.sidebar-block+.sidebar-block {
   margin-top: 26px;
   padding-top: 26px;
   border-top: 1px solid var(--line);
@@ -345,7 +387,7 @@ a {
 }
 
 .feed-section {
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
 .feed-grid {
@@ -604,6 +646,34 @@ textarea {
   padding: 8px 12px;
   font-size: 12px;
   border-radius: 14px;
+}
+
+.section-head {
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.section-head .button.primary.feed-write-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  border-radius: 10px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  width: auto !important;
+  align-self: flex-start !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+.post-detail+.card {
+  margin-top: 20px;
 }
 
 .chart-control-row {

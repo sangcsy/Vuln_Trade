@@ -119,7 +119,11 @@ INSERT INTO stocks (name, symbol, current_price) VALUES
 ('성준건설', 'SJC', 42150),
 ('대한모터스', 'DHM', 58700),
 ('한결바이오', 'HGB', 44200),
-('네오핀테크', 'NEO', 73100);
+('네오핀테크', 'NEO', 73100),
+('경석네트워크', 'KSN', 95000),
+('민성게임즈', 'MSG', 68000),
+('승원토건', 'SWC', 42000),
+('슬로우푸드', 'SLF', 31000);
 
 INSERT INTO stock_price_history (stock_id, current_price, recorded_at) VALUES
 (1, 76800, NOW() - INTERVAL 115 MINUTE),

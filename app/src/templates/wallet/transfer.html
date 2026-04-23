@@ -17,25 +17,26 @@
         <div>
           <p class="eyebrow">Wallet</p>
           <h2>최근 송금 내역</h2>
-          <p class="subtle">이 영역 안에서만 스크롤됩니다.</p>
+          <!-- <p class="subtle">이 영역 안에서만 스크롤됩니다.</p> -->
         </div>
       </div>
       <div class="feed-list transfer-history-list">
         {% for tx in transactions %}
-          <div class="feed-item">
-            <strong>
-              {% if tx.type == 'transfer_in' %}송금 입금{% elif tx.type == 'transfer_out' %}송금{% else %}{{ tx.type }}{% endif %}
-            </strong>
-            <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-            <div class="meta-row">
-              <span>{{ tx.actor_name or '-' }}</span>
-              <span>{{ tx.target_name or '-' }}</span>
-              <span>{{ "{:,}".format(tx.amount) }}원</span>
-            </div>
-            <p class="subtle">{{ tx.note or '' }}</p>
+        <div class="feed-item">
+          <strong>
+            {% if tx.type == 'transfer_in' %}송금 입금{% elif tx.type == 'transfer_out' %}송금{% else %}{{ tx.type }}{% endif
+            %}
+          </strong>
+          <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+          <div class="meta-row">
+            <span>{{ tx.actor_name or '-' }}</span>
+            <span>{{ tx.target_name or '-' }}</span>
+            <span>{{ "{:,}".format(tx.amount) }}원</span>
           </div>
+          <p class="subtle">{{ tx.note or '' }}</p>
+        </div>
         {% else %}
-          <p class="empty">송금 내역이 없습니다.</p>
+        <p class="empty">송금 내역이 없습니다.</p>
         {% endfor %}
       </div>
     </div>
@@ -47,7 +48,7 @@
     <label>받는 사람</label>
     <select name="target_user_id">
       {% for user in users %}
-        <option value="{{ user.id }}">{{ user.display_name }} ({{ user.username }})</option>
+      <option value="{{ user.id }}">{{ user.display_name }} ({{ user.username }})</option>
       {% endfor %}
     </select>
     <label>금액</label>
