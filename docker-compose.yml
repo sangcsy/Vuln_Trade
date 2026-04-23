@@ -5,7 +5,7 @@ services:
     depends_on:
       - app
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./app/src/static:/app/static
     networks:
@@ -15,7 +15,7 @@ services:
     build:
       context: ./app
     env_file:
-      - .env.example
+      - .env
     environment:
       DB_HOST: db
       DB_PORT: 3306
@@ -31,17 +31,17 @@ services:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
     env_file:
-      - .env.example
+      - .env
     environment:
-      MYSQL_DATABASE: vulntrade
-      MYSQL_USER: vulntrade
-      MYSQL_PASSWORD: vulntrade123
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-vulntrade}
+      MYSQL_USER: ${MYSQL_USER:-vulntrade}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-vulntrade123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
     volumes:
       - db-data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -proot123"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -52,7 +52,7 @@ services:
     build:
       context: ./scheduler
     env_file:
-      - .env.example
+      - .env
     environment:
       DB_HOST: db
       DB_PORT: 3306
