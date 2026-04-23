@@ -40,20 +40,45 @@ jobs:
         run: |
           set -euo pipefail
 
+          DEPLOY_USER="${EC2_DEPLOY_USER:-ec2-user}"
+          cat > remote-deploy.sh <<'REMOTE_SCRIPT'
+          set -euo pipefail
+
+          if [ -z "${DEPLOY_USER:-}" ]; then
+            DEPLOY_USER="ec2-user"
+          fi
+
+          DEPLOY_HOME="$(getent passwd "$DEPLOY_USER" | cut -d: -f6)"
+          if [ -z "$DEPLOY_HOME" ]; then
+            echo "Deploy user '$DEPLOY_USER' does not exist" >&2
+            exit 1
+          fi
+
+          if [ -z "${APP_DIR:-}" ]; then
+            APP_DIR="$DEPLOY_HOME/Vuln_Trade"
+          fi
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            runuser -l "$DEPLOY_USER" -c "git clone --branch '$BRANCH' '$REPO_URL' '$APP_DIR'"
+          fi
+
+          runuser -l "$DEPLOY_USER" -c "set -e; cd '$APP_DIR'; git fetch origin '$BRANCH'; git checkout '$BRANCH'; git pull --ff-only origin '$BRANCH'; if [ ! -f .env ]; then cp .env.example .env; fi; docker compose up -d --build; docker image prune -f"
+          REMOTE_SCRIPT
+
+          SCRIPT_B64="$(base64 -w 0 remote-deploy.sh)"
+
           COMMAND_ID="$(aws ssm send-command \
             --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy Vuln_Trade from GitHub Actions ${GITHUB_SHA}" \
             --parameters commands="[
               \"set -e\",
-              \"DEPLOY_USER='${EC2_DEPLOY_USER}'\",
-              \"if [ -z \\\"\\\$DEPLOY_USER\\\" ]; then DEPLOY_USER=ec2-user; fi\",
-              \"DEPLOY_HOME=\\\$(getent passwd \\\"\\\$DEPLOY_USER\\\" | cut -d: -f6)\",
-              \"APP_DIR='${APP_DIR}'\",
-              \"if [ -z \\\"\\\$APP_DIR\\\" ]; then APP_DIR=\\\"\\\$DEPLOY_HOME/Vuln_Trade\\\"; fi\",
-              \"BRANCH='${BRANCH}'\",
-              \"REPO_URL='${REPO_URL}'\",
-              \"runuser -l \\\"\\\$DEPLOY_USER\\\" -c \\\"set -e; if [ ! -d '\\\$APP_DIR/.git' ]; then git clone --branch '\\\$BRANCH' '\\\$REPO_URL' '\\\$APP_DIR'; fi; cd '\\\$APP_DIR'; git fetch origin '\\\$BRANCH'; git checkout '\\\$BRANCH'; git pull --ff-only origin '\\\$BRANCH'; if [ ! -f .env ]; then cp .env.example .env; fi; docker compose up -d --build; docker image prune -f\\\"\"
+              \"export DEPLOY_USER='${DEPLOY_USER}'\",
+              \"export APP_DIR='${APP_DIR}'\",
+              \"export BRANCH='${BRANCH}'\",
+              \"export REPO_URL='${REPO_URL}'\",
+              \"printf '%s' '${SCRIPT_B64}' | base64 -d > /tmp/vulntrade-deploy.sh\",
+              \"bash /tmp/vulntrade-deploy.sh\"
             ]" \
             --query "Command.CommandId" \
             --output text)"
