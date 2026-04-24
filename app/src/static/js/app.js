@@ -116,19 +116,49 @@ function buildRangePayload(payload, intervalSeconds) {
     };
   }
 
-  const TARGET = 420;
-  let sampled;
-  if (entries.length <= TARGET) {
-    sampled = entries;
+  const TARGET_MAX = 420;
+  const TARGET_MIN = 20;
+
+  // 단위별 시간 창 필터 (window = intervalSeconds * TARGET_MAX)
+  let windowed = entries;
+  if (intervalSeconds > 0) {
+    const cutoff = entries.at(-1).time - intervalSeconds * TARGET_MAX * 1000;
+    windowed = entries.filter((entry) => entry.time >= cutoff);
+    if (windowed.length === 0) windowed = [entries.at(-1)];
+  }
+
+  // 간격 기반 샘플링
+  let sampled = [];
+  if (intervalSeconds > 0) {
+    const intervalMs = intervalSeconds * 1000;
+    let lastIncluded = Number.NEGATIVE_INFINITY;
+    windowed.forEach((entry) => {
+      if (sampled.length === 0 || entry.time - lastIncluded >= intervalMs) {
+        sampled.push(entry);
+        lastIncluded = entry.time;
+      }
+    });
+    if (sampled.at(-1)?.time !== windowed.at(-1).time) sampled.push(windowed.at(-1));
   } else {
-    sampled = Array.from({ length: TARGET }, (_, i) => {
-      const idx = Math.round((i / (TARGET - 1)) * (entries.length - 1));
-      return entries[idx];
+    sampled = windowed;
+  }
+
+  // 최소 표본 보장
+  if (sampled.length < TARGET_MIN && windowed.length > 0) {
+    const count = Math.min(TARGET_MIN, windowed.length);
+    sampled = Array.from({ length: count }, (_, i) => {
+      const idx = count === 1 ? 0 : Math.round((i / (count - 1)) * (windowed.length - 1));
+      return windowed[idx];
     });
   }
 
-  if (sampled.at(-1)?.time !== entries.at(-1).time) {
-    sampled[sampled.length - 1] = entries.at(-1);
+  // 최대 표본 제한
+  if (sampled.length > TARGET_MAX) {
+    sampled = Array.from({ length: TARGET_MAX }, (_, i) => {
+      const idx = Math.round((i / (TARGET_MAX - 1)) * (sampled.length - 1));
+      return sampled[idx];
+    });
+    if (sampled.at(-1)?.time !== windowed.at(-1).time) sampled[sampled.length - 1] = windowed.at(-1);
   }
 
   const sampledPrices = sampled.map((entry) => entry.price);
