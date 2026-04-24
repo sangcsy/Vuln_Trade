@@ -111,7 +111,7 @@ def load_home_data():
         )
         portfolio = cursor.fetchall()
 
-        cursor.execute("SELECT id, name, symbol, current_price FROM stocks ORDER BY current_price DESC, id LIMIT 17")
+        cursor.execute("SELECT id, name, symbol, current_price FROM stocks ORDER BY current_price DESC, id")
         stocks = enrich_stock_cards(cursor, cursor.fetchall())
 
         cursor.execute(
@@ -286,13 +286,185 @@ def profile():
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(
-            "SELECT id, username, display_name, balance, role, created_at FROM users WHERE id=%s",
+            "SELECT id, username, display_name, balance, role, created_at, bank_name, account_number, account_holder FROM users WHERE id=%s",
             (target_user_id,),
         )
-        profile = cursor.fetchone()
+        profile_data = cursor.fetchone()
 
-    if not profile:
+    if not profile_data:
         flash("사용자를 찾을 수 없습니다.", "error")
         return redirect(url_for("main.index"))
 
-    return render_template("mypage/profile.html", profile=profile)
+    with db.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT h.*, s.name, s.symbol, s.current_price
+            FROM holdings h
+            JOIN stocks s ON s.id = h.stock_id
+            WHERE h.user_id=%s
+            ORDER BY (s.current_price * h.quantity) DESC
+            """,
+            (target_user_id,),
+        )
+        holdings = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT t.*, s.name AS stock_name, s.symbol
+            FROM transactions t
+            LEFT JOIN stocks s ON s.id = t.stock_id
+            WHERE t.user_id=%s AND t.type IN ('buy', 'sell')
+            ORDER BY t.created_at DESC LIMIT 5
+            """,
+            (target_user_id,),
+        )
+        recent_trades = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT t.*,
+                   sender.display_name AS sender_name,
+                   receiver.display_name AS receiver_name
+            FROM transactions t
+            LEFT JOIN users sender ON sender.id = CASE
+                WHEN t.type='transfer_out' THEN t.user_id
+                WHEN t.type='transfer_in' THEN t.target_user_id
+                ELSE NULL END
+            LEFT JOIN users receiver ON receiver.id = CASE
+                WHEN t.type='transfer_out' THEN t.target_user_id
+                WHEN t.type='transfer_in' THEN t.user_id
+                ELSE NULL END
+            WHERE t.user_id=%s AND t.type IN ('transfer_in', 'transfer_out')
+            ORDER BY t.created_at DESC LIMIT 5
+            """,
+            (target_user_id,),
+        )
+        recent_transfers = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT
+                COUNT(*) AS total_trades,
+                SUM(CASE WHEN type='buy' THEN 1 ELSE 0 END) AS buy_count,
+                SUM(CASE WHEN type='sell' THEN 1 ELSE 0 END) AS sell_count
+            FROM transactions WHERE user_id=%s AND type IN ('buy', 'sell')
+            """,
+            (target_user_id,),
+        )
+        trade_stats = cursor.fetchone()
+
+        cursor.execute("SELECT COUNT(*) AS cnt FROM posts WHERE user_id=%s", (target_user_id,))
+        post_count = cursor.fetchone()["cnt"]
+
+        cursor.execute("SELECT COUNT(*) AS cnt FROM comments WHERE user_id=%s", (target_user_id,))
+        comment_count = cursor.fetchone()["cnt"]
+
+    total_stock_value = 0
+    total_invested = 0
+    for item in holdings:
+        current_value = item["current_price"] * item["quantity"]
+        invested = item["avg_price"] * item["quantity"]
+        item["current_value"] = current_value
+        item["profit"] = current_value - invested
+        item["profit_rate"] = round((item["profit"] / max(invested, 1)) * 100, 2)
+        total_stock_value += current_value
+        total_invested += invested
+
+    unrealized_profit = total_stock_value - total_invested
+    total_assets = profile_data["balance"] + total_stock_value
+
+    for tx in recent_trades:
+        tx["type_label"] = "매수" if tx["type"] == "buy" else "매도"
+
+    for tx in recent_transfers:
+        tx["direction_label"] = "보냄" if tx["type"] == "transfer_out" else "받음"
+
+    return render_template(
+        "mypage/profile.html",
+        profile=profile_data,
+        is_own=(int(target_user_id) == int(session["user_id"])),
+        holdings=holdings,
+        total_assets=total_assets,
+        total_stock_value=total_stock_value,
+        total_invested=total_invested,
+        unrealized_profit=unrealized_profit,
+        recent_trades=recent_trades,
+        recent_transfers=recent_transfers,
+        trade_stats=trade_stats,
+        post_count=post_count,
+        comment_count=comment_count,
+    )
+
+
+@main_bp.route("/mypage/settings")
+@login_required
+def settings():
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute(
+            "SELECT id, username, display_name, bank_name, account_number, account_holder FROM users WHERE id=%s",
+            (session["user_id"],),
+        )
+        profile_data = cursor.fetchone()
+    if not profile_data:
+        return redirect(url_for("main.profile"))
+    return render_template("mypage/settings.html", profile=profile_data)
+
+
+@main_bp.route("/mypage/update-profile", methods=["POST"])
+@login_required
+def update_profile():
+    display_name = request.form.get("display_name", "").strip()
+    if not display_name:
+        flash("닉네임을 입력해 주세요.", "error")
+        return redirect(url_for("main.settings"))
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("UPDATE users SET display_name=%s WHERE id=%s", (display_name, session["user_id"]))
+    db.commit()
+    flash("닉네임이 변경되었습니다.", "success")
+    return redirect(url_for("main.settings"))
+
+
+@main_bp.route("/mypage/change-password", methods=["POST"])
+@login_required
+def change_password():
+    from ..utils.auth import hash_password, verify_password
+    current_pw = request.form.get("current_password", "")
+    new_pw = request.form.get("new_password", "")
+    confirm_pw = request.form.get("confirm_password", "")
+    if not current_pw or not new_pw or not confirm_pw:
+        flash("모든 필드를 입력해 주세요.", "error")
+        return redirect(url_for("main.profile"))
+    if new_pw != confirm_pw:
+        flash("새 비밀번호가 일치하지 않습니다.", "error")
+        return redirect(url_for("main.profile"))
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("SELECT password FROM users WHERE id=%s", (session["user_id"],))
+        user = cursor.fetchone()
+    if not user or not verify_password(current_pw, user["password"]):
+        flash("현재 비밀번호가 올바르지 않습니다.", "error")
+        return redirect(url_for("main.settings"))
+    with db.cursor() as cursor:
+        cursor.execute("UPDATE users SET password=%s WHERE id=%s", (hash_password(new_pw), session["user_id"]))
+    db.commit()
+    flash("비밀번호가 변경되었습니다.", "success")
+    return redirect(url_for("main.settings"))
+
+
+@main_bp.route("/mypage/update-bank", methods=["POST"])
+@login_required
+def update_bank():
+    bank_name = request.form.get("bank_name", "").strip() or None
+    account_number = request.form.get("account_number", "").strip() or None
+    account_holder = request.form.get("account_holder", "").strip() or None
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute(
+            "UPDATE users SET bank_name=%s, account_number=%s, account_holder=%s WHERE id=%s",
+            (bank_name, account_number, account_holder, session["user_id"]),
+        )
+    db.commit()
+    flash("계좌 정보가 저장되었습니다.", "success")
+    return redirect(url_for("main.settings"))

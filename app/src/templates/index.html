@@ -35,7 +35,7 @@
     <div class="market-list" data-market-list>
       {% for stock in stocks %}
       <a class="market-row {% if loop.first %}is-active{% endif %}" href="{{ stock.detail_url }}"
-        data-stock-preview='{{ stock.preview_json|safe }}' data-market-row data-stock-id="{{ stock.id }}">
+        data-stock-preview='{{ stock.preview_json|safe|replace("'", "&#39;") }}' data-market-row data-stock-id="{{ stock.id }}">
         <div class="market-rank">{{ loop.index }}</div>
         <div class="market-name">
           <strong data-market-name>{{ stock.name }}</strong>
@@ -67,7 +67,7 @@
     </div>
     <div class="chart-wrap preview-chart-wrap">
       <canvas id="home-preview-chart" width="520" height="320" data-home-preview-chart data-responsive="true"
-        data-preview-payload='{{ preview_stock.preview_json|safe }}' data-live-time="true"></canvas>
+        data-preview-payload='{{ preview_stock.preview_json|safe|replace("'", "&#39;") }}' data-live-time="true"></canvas>
     </div>
     <div class="preview-copy preview-news-box" data-preview-news>
       <div class="stock-news-title">

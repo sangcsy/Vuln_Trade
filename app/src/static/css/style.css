@@ -436,6 +436,12 @@ a {
   min-height: 780px;
 }
 
+.stock-search-layout.is-compact .board-card,
+.stock-search-layout.is-compact .stock-news-panel {
+  height: auto;
+  min-height: 0;
+}
+
 .stock-search-layout .board-card {
   display: flex;
   flex-direction: column;
@@ -1299,5 +1305,329 @@ textarea {
   .ticker-card {
     flex-basis: var(--ticker-card-width, 100%);
     min-width: var(--ticker-card-width, 100%);
+  }
+}
+
+/* ── Mypage ── */
+.mypage-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.mypage-hero-avatar {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--dark);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mypage-hero-name {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.mypage-hero-sub {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.mypage-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.mypage-role-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mypage-role-badge.admin {
+  background: #111827;
+  color: #fff;
+}
+
+.mypage-role-badge.user {
+  background: #eef4ff;
+  color: var(--blue);
+}
+
+.mypage-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.mypage-stat-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+}
+
+.mypage-stat-label {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mypage-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.mypage-main {
+  display: grid;
+  gap: 16px;
+}
+
+.mypage-settings-btn {
+  margin-left: auto;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+
+.mypage-bank-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.mypage-bank-label {
+  font-weight: 700;
+}
+
+.mypage-bank-account {
+  color: var(--muted);
+  font-family: "Segoe UI Mono", "Consolas", monospace;
+}
+
+.mypage-settings-layout {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.mypage-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mypage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mypage-section .compact-head {
+  margin-bottom: 0;
+}
+
+.mypage-table-wrap {
+  overflow-x: auto;
+}
+
+.mypage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.mypage-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.mypage-table td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.mypage-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mypage-table .align-right {
+  text-align: right;
+}
+
+.mypage-stock-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mypage-activity-list {
+  display: grid;
+  gap: 2px;
+}
+
+.mypage-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.mypage-activity-row:last-child {
+  border-bottom: none;
+}
+
+.mypage-trade-badge,
+.mypage-transfer-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 40px;
+  text-align: center;
+}
+
+.mypage-trade-badge.buy {
+  background: #fff0f1;
+  color: var(--red);
+}
+
+.mypage-trade-badge.sell {
+  background: #eef4ff;
+  color: var(--blue);
+}
+
+.mypage-transfer-badge.transfer_out {
+  background: #fff7e6;
+  color: #b45309;
+}
+
+.mypage-transfer-badge.transfer_in {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.mypage-activity-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  min-width: 0;
+}
+
+.mypage-activity-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.mypage-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.mypage-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mypage-info-rows {
+  display: grid;
+  gap: 10px;
+}
+
+.mypage-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mypage-info-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.mypage-info-row span {
+  color: var(--muted);
+}
+
+.mypage-form {
+  display: grid;
+  gap: 14px;
+}
+
+.mypage-form-group {
+  display: grid;
+  gap: 6px;
+}
+
+.mypage-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mypage-form-group input {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--surface-soft);
+  width: 100%;
+}
+
+.mypage-form-group input:focus {
+  outline: none;
+  border-color: var(--blue);
+  background: #fff;
+}
+
+@media (max-width: 1100px) {
+  .mypage-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mypage-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .mypage-stat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mypage-info-grid {
+    grid-template-columns: 1fr;
   }
 }

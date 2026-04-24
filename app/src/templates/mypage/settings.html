@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}정보 변경 - {{ profile.display_name }}{% endblock %}
+{% block content %}
+
+<div class="section-head">
+  <div>
+    <p class="eyebrow">Settings</p>
+    <h1>정보 변경</h1>
+  </div>
+  <a class="button ghost inline-btn" href="{{ url_for('main.profile') }}">마이페이지로</a>
+</div>
+
+<div class="mypage-settings-layout">
+
+  <div class="card mypage-section">
+    <p class="eyebrow">Profile</p>
+    <h3>닉네임 변경</h3>
+    <form method="post" action="{{ url_for('main.update_profile') }}" class="mypage-form">
+      <div class="mypage-form-group">
+        <label>닉네임</label>
+        <input type="text" name="display_name" value="{{ profile.display_name }}" required>
+      </div>
+      <div class="mypage-form-actions">
+        <button type="submit" class="button primary">변경</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card mypage-section">
+    <p class="eyebrow">Security</p>
+    <h3>비밀번호 변경</h3>
+    <form method="post" action="{{ url_for('main.change_password') }}" class="mypage-form">
+      <div class="mypage-form-group">
+        <label>현재 비밀번호</label>
+        <input type="password" name="current_password" required>
+      </div>
+      <div class="mypage-form-group">
+        <label>새 비밀번호</label>
+        <input type="password" name="new_password" required>
+      </div>
+      <div class="mypage-form-group">
+        <label>새 비밀번호 확인</label>
+        <input type="password" name="confirm_password" required>
+      </div>
+      <div class="mypage-form-actions">
+        <button type="submit" class="button primary">변경</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card mypage-section">
+    <p class="eyebrow">Bank Account</p>
+    <h3>계좌 정보</h3>
+    <form method="post" action="{{ url_for('main.update_bank') }}" class="mypage-form">
+      <div class="mypage-form-group">
+        <label>은행명</label>
+        <input type="text" name="bank_name" value="{{ profile.bank_name or '' }}" placeholder="예) 국민은행">
+      </div>
+      <div class="mypage-form-group">
+        <label>계좌번호</label>
+        <input type="text" name="account_number" value="{{ profile.account_number or '' }}" placeholder="예) 123-456-789012">
+      </div>
+      <div class="mypage-form-group">
+        <label>예금주</label>
+        <input type="text" name="account_holder" value="{{ profile.account_holder or '' }}" placeholder="예금주 이름">
+      </div>
+      <div class="mypage-form-actions">
+        <button type="submit" class="button primary">저장</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

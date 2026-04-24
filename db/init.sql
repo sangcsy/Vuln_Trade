@@ -19,6 +19,9 @@ CREATE TABLE users (
   display_name VARCHAR(100) NOT NULL,
   balance BIGINT NOT NULL DEFAULT 1000000,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
+  bank_name VARCHAR(50) NULL,
+  account_number VARCHAR(50) NULL,
+  account_holder VARCHAR(50) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

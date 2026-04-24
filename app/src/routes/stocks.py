@@ -101,7 +101,7 @@ def search_stocks():
                 f"FROM stocks "
                 f"WHERE name LIKE '%{q}%' "
                 f"OR symbol LIKE '%{q}%' "
-                f"ORDER BY current_price DESC, id"
+                f"ORDER BY name ASC, id"
             )
             cursor.execute(query)
         else:

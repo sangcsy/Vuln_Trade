@@ -1,10 +1,199 @@
 {% extends "base.html" %}
-{% block title %}마이페이지{% endblock %}
+{% block title %}마이페이지 - {{ profile.display_name }}{% endblock %}
 {% block content %}
-<section class="card">
-  <p class="eyebrow">Profile</p>
-  <h1>{{ profile.display_name }}</h1>
-  <div class="price-lg">{{ "{:,}".format(profile.balance) }}원</div>
-  <p class="subtle">@{{ profile.username }} · {{ profile.role }}</p>
-</section>
+
+<div class="mypage-hero card">
+  <div class="mypage-hero-avatar">{{ profile.display_name[0] }}</div>
+  <div class="mypage-hero-info">
+    <h1 class="mypage-hero-name">{{ profile.display_name }}</h1>
+    <p class="mypage-hero-sub">@{{ profile.username }}</p>
+    <div class="mypage-hero-meta">
+      <span class="mypage-role-badge {{ profile.role }}">{{ '관리자' if profile.role == 'admin' else '일반회원' }}</span>
+      <span class="subtle">가입일 {{ profile.created_at.strftime('%Y.%m.%d') }}</span>
+    </div>
+    <div class="mypage-bank-info">
+      {% if profile.bank_name or profile.account_number %}
+        <span class="mypage-bank-label">{{ profile.bank_name or '' }}</span>
+        <span class="mypage-bank-account">{{ profile.account_number or '' }}</span>
+        {% if profile.account_holder %}<span class="subtle">{{ profile.account_holder }}</span>{% endif %}
+      {% else %}
+        <span class="subtle">등록된 계좌 정보 없음</span>
+      {% endif %}
+    </div>
+  </div>
+  {% if is_own %}
+  <a class="button ghost inline-btn mypage-settings-btn" href="{{ url_for('main.settings') }}">정보 변경</a>
+  {% endif %}
+</div>
+
+<div class="mypage-stat-grid">
+  <div class="mypage-stat-card">
+    <p class="mypage-stat-label">예수금</p>
+    <strong class="mypage-stat-value">{{ "{:,}".format(profile.balance) }}원</strong>
+  </div>
+  <div class="mypage-stat-card">
+    <p class="mypage-stat-label">주식 평가금액</p>
+    <strong class="mypage-stat-value">{{ "{:,}".format(total_stock_value) }}원</strong>
+  </div>
+  <div class="mypage-stat-card">
+    <p class="mypage-stat-label">총 자산</p>
+    <strong class="mypage-stat-value">{{ "{:,}".format(total_assets) }}원</strong>
+  </div>
+  <div class="mypage-stat-card">
+    <p class="mypage-stat-label">미실현 손익</p>
+    <strong class="mypage-stat-value {{ 'up' if unrealized_profit >= 0 else 'down' }}">
+      {{ '+' if unrealized_profit >= 0 else '' }}{{ "{:,}".format(unrealized_profit) }}원
+    </strong>
+  </div>
+</div>
+
+<div class="mypage-main">
+
+  <div class="card mypage-section">
+    <div class="section-head compact-head">
+      <div>
+        <p class="eyebrow">Portfolio</p>
+        <h2>보유 종목</h2>
+      </div>
+      <a class="button ghost inline-btn" href="{{ url_for('stocks.portfolio') }}">전체 보기</a>
+    </div>
+    {% if holdings %}
+    <div class="mypage-table-wrap">
+      <table class="mypage-table">
+        <thead>
+          <tr>
+            <th>종목</th>
+            <th class="align-right">수량</th>
+            <th class="align-right">평단가</th>
+            <th class="align-right">현재가</th>
+            <th class="align-right">평가금액</th>
+            <th class="align-right">수익률</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in holdings %}
+          <tr>
+            <td>
+              <a href="{{ url_for('stocks.stock_detail', stock_id=item.stock_id) }}" class="mypage-stock-link">
+                <strong>{{ item.name }}</strong>
+                <span class="subtle">{{ item.symbol }}</span>
+              </a>
+            </td>
+            <td class="align-right">{{ item.quantity }}주</td>
+            <td class="align-right">{{ "{:,}".format(item.avg_price) }}원</td>
+            <td class="align-right">{{ "{:,}".format(item.current_price) }}원</td>
+            <td class="align-right">{{ "{:,}".format(item.current_value) }}원</td>
+            <td class="align-right {{ 'up' if item.profit >= 0 else 'down' }}">
+              {{ '+' if item.profit_rate >= 0 else '' }}{{ "%.2f"|format(item.profit_rate) }}%
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">보유 중인 종목이 없습니다.</p>
+    {% endif %}
+  </div>
+
+  <div class="mypage-info-grid">
+
+    <div class="card mypage-section">
+      <div class="section-head compact-head">
+        <div>
+          <p class="eyebrow">Activity</p>
+          <h2>최근 거래 내역</h2>
+        </div>
+        <a class="button ghost inline-btn" href="{{ url_for('stocks.trade_history') }}">전체 보기</a>
+      </div>
+      {% if recent_trades %}
+      <div class="mypage-activity-list">
+        {% for tx in recent_trades %}
+        <div class="mypage-activity-row">
+          <span class="mypage-trade-badge {{ tx.type }}">{{ tx.type_label }}</span>
+          <div class="mypage-activity-info">
+            <strong>{{ tx.stock_name or '-' }}</strong>
+            <span class="subtle">{{ tx.symbol or '' }} · {{ tx.quantity }}주</span>
+          </div>
+          <div class="mypage-activity-right">
+            <strong>{{ "{:,}".format(tx.amount) }}원</strong>
+            <span class="subtle">{{ tx.created_at.strftime('%m.%d %H:%M') }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty">거래 내역이 없습니다.</p>
+      {% endif %}
+    </div>
+
+    <div class="card mypage-section">
+      <div class="section-head compact-head">
+        <div>
+          <p class="eyebrow">Transfers</p>
+          <h2>최근 송금 내역</h2>
+        </div>
+        <a class="button ghost inline-btn" href="{{ url_for('wallet.history') }}">전체 보기</a>
+      </div>
+      {% if recent_transfers %}
+      <div class="mypage-activity-list">
+        {% for tx in recent_transfers %}
+        <div class="mypage-activity-row">
+          <span class="mypage-transfer-badge {{ tx.type }}">{{ tx.direction_label }}</span>
+          <div class="mypage-activity-info">
+            <strong>{{ tx.sender_name or '-' }} → {{ tx.receiver_name or '-' }}</strong>
+            <span class="subtle">{{ tx.note or '' }}</span>
+          </div>
+          <div class="mypage-activity-right">
+            <strong>{{ "{:,}".format(tx.amount) }}원</strong>
+            <span class="subtle">{{ tx.created_at.strftime('%m.%d %H:%M') }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty">송금 내역이 없습니다.</p>
+      {% endif %}
+    </div>
+
+    <div class="card mypage-info-card">
+      <p class="eyebrow">Statistics</p>
+      <h3>투자 통계</h3>
+      <div class="mypage-info-rows">
+        <div class="mypage-info-row">
+          <span>총 거래 횟수</span>
+          <strong>{{ trade_stats.total_trades or 0 }}건</strong>
+        </div>
+        <div class="mypage-info-row">
+          <span>매수</span>
+          <strong>{{ trade_stats.buy_count or 0 }}건</strong>
+        </div>
+        <div class="mypage-info-row">
+          <span>매도</span>
+          <strong>{{ trade_stats.sell_count or 0 }}건</strong>
+        </div>
+        <div class="mypage-info-row">
+          <span>보유 종목 수</span>
+          <strong>{{ holdings|length }}개</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mypage-info-card">
+      <p class="eyebrow">Community</p>
+      <h3>커뮤니티 활동</h3>
+      <div class="mypage-info-rows">
+        <div class="mypage-info-row">
+          <span>작성 게시글</span>
+          <strong>{{ post_count }}건</strong>
+        </div>
+        <div class="mypage-info-row">
+          <span>작성 댓글</span>
+          <strong>{{ comment_count }}건</strong>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
 {% endblock %}

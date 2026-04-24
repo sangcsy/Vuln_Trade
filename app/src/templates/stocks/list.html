@@ -25,7 +25,7 @@
   </div>
 </section>
 
-<section class="stock-search-layout">
+<section class="stock-search-layout{% if stocks|length < 10 %} is-compact{% endif %}">
   <div class="card board-card">
     <div class="rank-list rank-list-wide">
       {% for stock in stocks %}
