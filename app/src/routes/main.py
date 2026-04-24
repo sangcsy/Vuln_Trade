@@ -1,5 +1,7 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+KST = timezone(timedelta(hours=9))
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
@@ -24,8 +26,9 @@ def transaction_label(tx_type):
 
 def history_payload(history_rows, current_price, time_format="%H:%M:%S"):
     prices = [row["current_price"] for row in history_rows] or [current_price]
-    timestamps = [row["recorded_at"].strftime("%Y-%m-%d %H:%M:%S") for row in history_rows]
-    labels = [row["recorded_at"].strftime(time_format) for row in history_rows] or ["지금"]
+    kst_times = [row["recorded_at"].replace(tzinfo=timezone.utc).astimezone(KST) for row in history_rows]
+    timestamps = [dt.strftime("%Y-%m-%d %H:%M:%S") for dt in kst_times]
+    labels = [dt.strftime(time_format) for dt in kst_times] or ["지금"]
     return prices, timestamps, labels
 
 

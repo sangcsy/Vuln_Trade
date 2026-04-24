@@ -1,4 +1,7 @@
+from datetime import timedelta, timezone
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+
+KST = timezone(timedelta(hours=9))
 
 from ..db import get_db
 from ..services.news_service import stock_news_items
@@ -14,8 +17,9 @@ DETAIL_HISTORY_LIMIT = 420
 
 def build_history_bundle(history_rows, current_price, time_format="%H:%M:%S"):
     prices = [row["current_price"] for row in history_rows] or [current_price]
-    timestamps = [row["recorded_at"].strftime("%Y-%m-%d %H:%M:%S") for row in history_rows]
-    labels = [row["recorded_at"].strftime(time_format) for row in history_rows] or ["\uc9c0\uae08"]
+    kst_times = [row["recorded_at"].replace(tzinfo=timezone.utc).astimezone(KST) for row in history_rows]
+    timestamps = [dt.strftime("%Y-%m-%d %H:%M:%S") for dt in kst_times]
+    labels = [dt.strftime(time_format) for dt in kst_times] or ["\uc9c0\uae08"]
     return prices, labels, timestamps
 
 

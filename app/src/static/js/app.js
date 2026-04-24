@@ -18,7 +18,7 @@ function parseLabels(raw) {
 
 function parseChartTimestamp(timestamp) {
   if (!timestamp) return Number.NaN;
-  return new Date(`${String(timestamp).trim().replace(" ", "T")}Z`).getTime();
+  return new Date(`${String(timestamp).trim().replace(" ", "T")}+09:00`).getTime();
 }
 
 function formatClock(timestamp, withSeconds = true) {
@@ -192,7 +192,9 @@ function bindChartTooltip(canvas, payload, points, redraw) {
       current.redraw(canvas, current.payload, nearestIndex);
     }
 
-    const label = current.payload.labels?.[nearestIndex] || formatClock(current.payload.timestamps?.[nearestIndex], true);
+    const label = canvas.dataset.liveTime === "true"
+      ? new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Seoul" }).format(new Date())
+      : (current.payload.labels?.[nearestIndex] || formatClock(current.payload.timestamps?.[nearestIndex], true));
     const price = current.payload.prices?.[nearestIndex] || 0;
     tooltip.textContent = `${label || "지금"} · ${formatKrw(price)}`;
     tooltip.style.opacity = "1";
@@ -495,7 +497,9 @@ function updateHomePreview(payload) {
 
   const updatedAtNode = document.querySelector("[data-preview-updated-at]");
   if (updatedAtNode) {
-    updatedAtNode.textContent = payload.latest_time_label || formatClock(payload.timestamps?.at(-1), true);
+    updatedAtNode.textContent = new Intl.DateTimeFormat("ko-KR", {
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Seoul",
+    }).format(new Date());
   }
 
   const newsBox = document.querySelector("[data-preview-news]");
