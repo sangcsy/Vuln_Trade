@@ -61,7 +61,7 @@ def update_prices():
                           FROM stock_price_history
                           WHERE stock_id=%s
                           ORDER BY recorded_at DESC
-                          LIMIT 420
+                          LIMIT 10000
                       ) AS recent_rows
                   )
                 """,

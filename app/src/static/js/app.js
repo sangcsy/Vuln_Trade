@@ -91,7 +91,7 @@ function getTooltip() {
 function buildRangePayload(payload, intervalSeconds) {
   const prices = payload.prices || [];
   const timestamps = payload.timestamps || [];
-  if (!timestamps.length || !prices.length || !intervalSeconds) {
+  if (!timestamps.length || !prices.length) {
     return {
       ...payload,
       labels: payload.labels || [],
@@ -116,29 +116,24 @@ function buildRangePayload(payload, intervalSeconds) {
     };
   }
 
-  const sampled = [];
-  let lastIncluded = Number.NEGATIVE_INFINITY;
-  const intervalMs = intervalSeconds * 1000;
-
-  entries.forEach((entry) => {
-    if (sampled.length === 0 || entry.time - lastIncluded >= intervalMs) {
-      sampled.push(entry);
-      lastIncluded = entry.time;
-    }
-  });
-
-  const latestEntry = entries.at(-1);
-  if (sampled.at(-1)?.time !== latestEntry.time) {
-    sampled.push(latestEntry);
+  const TARGET = 420;
+  let sampled;
+  if (entries.length <= TARGET) {
+    sampled = entries;
+  } else {
+    sampled = Array.from({ length: TARGET }, (_, i) => {
+      const idx = Math.round((i / (TARGET - 1)) * (entries.length - 1));
+      return entries[idx];
+    });
   }
 
-  if (sampled.length === 1 && entries.length > 1) {
-    sampled.unshift(entries[0]);
+  if (sampled.at(-1)?.time !== entries.at(-1).time) {
+    sampled[sampled.length - 1] = entries.at(-1);
   }
 
   const sampledPrices = sampled.map((entry) => entry.price);
   const sampledTimes = sampled.map((entry) => entry.timestamp);
-  const useSeconds = intervalSeconds <= 60;
+  const useSeconds = intervalSeconds <= 30;
   const labels = sampledTimes.map((value) => formatClock(value, useSeconds));
 
   return {
@@ -373,7 +368,10 @@ function drawDetailChart(canvas, payload, highlightedIndex = null) {
   const labels = payload.labels || [];
   ctx.fillStyle = "#7e8796";
   ctx.font = '12px "Segoe UI", "Malgun Gothic", sans-serif';
-  [0, Math.floor(labels.length / 2), labels.length - 1].forEach((index) => {
+  const labelCount = Math.min(5, labels.length);
+  Array.from({ length: labelCount }, (_, i) =>
+    labelCount === 1 ? 0 : Math.round((i / (labelCount - 1)) * (labels.length - 1))
+  ).forEach((index) => {
     if (labels[index] && points[index]) {
       ctx.fillText(labels[index], points[index].x - 18, height - 10);
     }
@@ -535,7 +533,9 @@ function bindRangeControls() {
         canvas.dataset.range = button.dataset.chartRange;
         setRangeButtons(group, button.dataset.chartRange);
         const state = getChartState(canvas);
-        if (state.rawPayload) {
+        if (typeof state.refreshFn === "function") {
+          state.refreshFn();
+        } else if (state.rawPayload) {
           renderManagedChart(canvas, state.rawPayload);
         }
       });
@@ -661,7 +661,8 @@ async function hydrateDetailChart() {
   const refresh = async (resetSize = false) => {
     try {
       if (resetSize) resetCanvasLayout(canvas);
-      const response = await fetch(endpoint, { cache: "no-store" });
+      const interval = Number(canvas.dataset.range || 10);
+      const response = await fetch(`${endpoint}?interval=${interval}`, { cache: "no-store" });
       if (!response.ok) return;
       const payload = await response.json();
       renderManagedChart(canvas, payload);
@@ -671,6 +672,7 @@ async function hydrateDetailChart() {
     }
   };
 
+  getChartState(canvas).refreshFn = refresh;
   await refresh();
   window.addEventListener("resize", () => refresh(true));
   setInterval(refresh, 5000);

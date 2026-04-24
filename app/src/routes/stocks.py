@@ -156,10 +156,14 @@ def stock_detail(stock_id):
     return render_template("stocks/detail.html", stock=stock, holding=holding)
 
 
+INTERVAL_LIMITS = {10: 420, 30: 1260, 60: 2520, 600: 10000, 3600: 10000}
+
 @stocks_bp.route("/<int:stock_id>/chart-data")
 def chart_data(stock_id):
     db = get_db()
     holding = None
+    interval = int(request.args.get("interval", 10))
+    limit = INTERVAL_LIMITS.get(interval, min(max(int(request.args.get("limit", DETAIL_HISTORY_LIMIT)), 1), 10000))
     with db.cursor() as cursor:
         cursor.execute("SELECT id, name, symbol, current_price FROM stocks WHERE id=%s", (stock_id,))
         stock = cursor.fetchone()
@@ -174,7 +178,7 @@ def chart_data(stock_id):
             ORDER BY recorded_at DESC
             LIMIT %s
             """,
-            (stock_id, DETAIL_HISTORY_LIMIT),
+            (stock_id, limit),
         )
         rows = list(reversed(cursor.fetchall()))
 
