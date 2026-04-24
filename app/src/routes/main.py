@@ -286,7 +286,7 @@ def profile():
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(
-            "SELECT id, username, display_name, balance, role, created_at, bank_name, account_number, account_holder FROM users WHERE id=%s",
+            "SELECT id, username, display_name, balance, role, created_at FROM users WHERE id=%s",
             (target_user_id,),
         )
         profile_data = cursor.fetchone()
@@ -402,7 +402,7 @@ def settings():
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(
-            "SELECT id, username, display_name, bank_name, account_number, account_holder FROM users WHERE id=%s",
+            "SELECT id, username, display_name FROM users WHERE id=%s",
             (session["user_id"],),
         )
         profile_data = cursor.fetchone()
@@ -453,18 +453,3 @@ def change_password():
     return redirect(url_for("main.settings"))
 
 
-@main_bp.route("/mypage/update-bank", methods=["POST"])
-@login_required
-def update_bank():
-    bank_name = request.form.get("bank_name", "").strip() or None
-    account_number = request.form.get("account_number", "").strip() or None
-    account_holder = request.form.get("account_holder", "").strip() or None
-    db = get_db()
-    with db.cursor() as cursor:
-        cursor.execute(
-            "UPDATE users SET bank_name=%s, account_number=%s, account_holder=%s WHERE id=%s",
-            (bank_name, account_number, account_holder, session["user_id"]),
-        )
-    db.commit()
-    flash("계좌 정보가 저장되었습니다.", "success")
-    return redirect(url_for("main.settings"))
