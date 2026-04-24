@@ -20,7 +20,7 @@ jobs:
       EC2_DEPLOY_USER: ${{ secrets.EC2_DEPLOY_USER }}
       APP_DIR: ${{ secrets.EC2_APP_DIR }}
       BRANCH: dev
-      REPO_URL: https://github.com/sangcsy/Vuln_Trade.git
+      REPO_URL: https://github.com/Vulnerable-Trade/Vuln_Trade.git
 
     steps:
       - name: Validate required secrets
@@ -43,7 +43,7 @@ jobs:
           DEPLOY_USER="${EC2_DEPLOY_USER:-ec2-user}"
           DEPLOY_HOME="/home/$DEPLOY_USER"
           APP_PATH="${APP_DIR:-$DEPLOY_HOME/Vuln_Trade}"
-          DEPLOY_CMD="cd '$APP_PATH' && git fetch origin '$BRANCH' && git checkout '$BRANCH' && git pull --ff-only origin '$BRANCH' && if [ ! -f .env ]; then cp .env.example .env; fi && docker compose up -d --build && docker image prune -f"
+          DEPLOY_CMD="cd '$APP_PATH' && git fetch origin '$BRANCH' && git checkout '$BRANCH' && git reset --hard origin/'$BRANCH' && if [ ! -f .env ]; then cp .env.example .env; fi && docker compose up -d --build && docker image prune -f"
 
           COMMAND_ID="$(aws ssm send-command \
             --instance-ids "$EC2_INSTANCE_ID" \
