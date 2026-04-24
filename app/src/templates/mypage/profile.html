@@ -11,6 +11,15 @@
       <span class="mypage-role-badge {{ profile.role }}">{{ '관리자' if profile.role == 'admin' else '일반회원' }}</span>
       <span class="subtle">가입일 {{ profile.created_at.strftime('%Y.%m.%d') }}</span>
     </div>
+    <div class="mypage-bank-info">
+      {% if profile.bank_name or profile.account_number %}
+        <span class="mypage-bank-label">{{ profile.bank_name or '' }}</span>
+        <span class="mypage-bank-account">{{ profile.account_number or '' }}</span>
+        {% if profile.account_holder %}<span class="subtle">{{ profile.account_holder }}</span>{% endif %}
+      {% else %}
+        <span class="subtle">등록된 계좌 정보 없음</span>
+      {% endif %}
+    </div>
   </div>
   {% if is_own %}
   <a class="button ghost inline-btn mypage-settings-btn" href="{{ url_for('main.settings') }}">정보 변경</a>
