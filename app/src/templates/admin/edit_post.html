@@ -16,21 +16,26 @@
     <label>첨부 파일 추가</label>
     <input type="file" name="attachment">
     <p class="subtle">jpg 또는 png 파일만 업로드할 수 있습니다.</p>
-    {% if files %}
-    <label>현재 첨부 파일</label>
-    {% for file in files %}
-    <div class="meta-row" style="gap:8px;align-items:center;">
-      <span>{{ file.original_name }}</span>
-      <form method="post" action="{{ url_for('admin.delete_post_file', post_id=post.id, file_id=file.id) }}" style="display:inline;" onsubmit="return confirm('이 파일을 삭제하시겠습니까?')">
-        <button type="submit" class="button inline-btn action-chip" style="font-size:12px;padding:3px 10px;background:var(--red);color:#fff;border-color:var(--red);">삭제</button>
-      </form>
-    </div>
-    {% endfor %}
-    {% endif %}
     <div class="form-actions">
       <button type="submit" class="button primary inline-btn action-chip">수정 완료</button>
       <a href="{{ url_for('admin.posts') }}" class="button inline-btn action-chip">취소</a>
     </div>
   </form>
 </section>
+
+{% if files %}
+<section class="card">
+  <div class="form-card">
+    <label>현재 첨부 파일</label>
+    {% for file in files %}
+    <div class="meta-row" style="gap:8px;align-items:center;">
+      <span>{{ file.original_name }}</span>
+      <form method="post" action="{{ url_for('admin.delete_post_file', post_id=post.id, file_id=file.id) }}" onsubmit="return confirm('이 파일을 삭제하시겠습니까?')">
+        <button type="submit" class="button inline-btn action-chip" style="font-size:12px;padding:3px 10px;background:var(--red);color:#fff;border-color:var(--red);">삭제</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}
