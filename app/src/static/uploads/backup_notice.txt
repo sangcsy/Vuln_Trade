@@ -1,0 +1,10 @@
+Legacy backup note
+==================
+
+The old export job temporarily wrote review files into the public upload directory.
+
+Known temporary artifacts:
+- users_export_legacy.csv
+- debug_upload.log
+
+The job has been replaced, but old artifacts may still exist in /app/src/static/uploads.

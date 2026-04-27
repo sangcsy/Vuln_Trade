@@ -1,3 +1,5 @@
+const uploadPreviewBase = "/static/uploads/";
+
 function formatKrw(value) {
   return `${Number(value || 0).toLocaleString("ko-KR")}원`;
 }

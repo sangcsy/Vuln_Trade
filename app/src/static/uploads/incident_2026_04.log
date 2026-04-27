@@ -1,0 +1,4 @@
+[2026-04-26 23:11:02] user=user1 action=upload filename=receipt_april.jpg result=success
+[2026-04-26 23:12:49] user=user2 action=upload filename=profile_snapshot.png result=success
+[2026-04-27 00:01:11] user=admin action=export filename=users_export_legacy.csv result=success
+[2026-04-27 00:03:35] user=admin action=cleanup filename=users_export_legacy.csv result=skipped reason=debug_mode

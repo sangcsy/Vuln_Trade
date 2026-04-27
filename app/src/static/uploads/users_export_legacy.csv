@@ -1,0 +1,5 @@
+id,username,display_name,role,balance,last_exported
+1,admin,Chief Admin,admin,5000000,2026-04-27 08:10:15
+2,user1,Minjun Kim,user,1200000,2026-04-27 08:10:15
+3,user2,Seoyun Park,user,900000,2026-04-27 08:10:15
+4,auditor,Security Auditor,user,300000,2026-04-27 08:10:15
