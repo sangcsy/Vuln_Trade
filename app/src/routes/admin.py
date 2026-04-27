@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from ..db import get_db
 from ..utils.decorators import admin_required
@@ -73,6 +73,40 @@ def transactions():
     return render_template("admin/transactions.html", transactions=transactions)
 
 
+@admin_bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
+@admin_required
+def edit_user(user_id):
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("SELECT id, username, display_name, balance, role FROM users WHERE id=%s", (user_id,))
+        user = cursor.fetchone()
+    if not user:
+        flash("사용자를 찾을 수 없습니다.", "error")
+        return redirect(url_for("admin.users"))
+    if request.method == "POST":
+        display_name = request.form.get("display_name", "")
+        with db.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET display_name=%s WHERE id=%s",
+                (display_name, user_id),
+            )
+        db.commit()
+        flash("사용자 정보가 수정되었습니다.", "success")
+        return redirect(url_for("admin.users"))
+    return render_template("admin/edit_user.html", user=user)
+
+
+@admin_bp.route("/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def delete_user(user_id):
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("DELETE FROM users WHERE id=%s", (user_id,))
+    db.commit()
+    flash("사용자가 삭제되었습니다.", "success")
+    return redirect(url_for("admin.users"))
+
+
 @admin_bp.route("/posts")
 @admin_required
 def posts():
@@ -88,3 +122,38 @@ def posts():
         )
         posts = cursor.fetchall()
     return render_template("admin/posts.html", posts=posts)
+
+
+@admin_bp.route("/posts/<int:post_id>/edit", methods=["GET", "POST"])
+@admin_required
+def edit_post(post_id):
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM posts WHERE id=%s", (post_id,))
+        post = cursor.fetchone()
+    if not post:
+        flash("게시글을 찾을 수 없습니다.", "error")
+        return redirect(url_for("admin.posts"))
+    if request.method == "POST":
+        title = request.form.get("title", "")
+        content = request.form.get("content", "")
+        with db.cursor() as cursor:
+            cursor.execute(
+                "UPDATE posts SET title=%s, content=%s, updated_at=NOW() WHERE id=%s",
+                (title, content, post_id),
+            )
+        db.commit()
+        flash("게시글이 수정되었습니다.", "success")
+        return redirect(url_for("admin.posts"))
+    return render_template("admin/edit_post.html", post=post)
+
+
+@admin_bp.route("/posts/<int:post_id>/delete", methods=["POST"])
+@admin_required
+def delete_post(post_id):
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("DELETE FROM posts WHERE id=%s", (post_id,))
+    db.commit()
+    flash("게시글이 삭제되었습니다.", "success")
+    return redirect(url_for("admin.posts"))

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}사용자 수정{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>사용자 수정</h1>
+  </div>
+</section>
+<section class="card">
+  <form method="post" class="form-card">
+    <label>아이디</label>
+    <input type="text" value="{{ user.username }}" disabled>
+    <label>표시 이름</label>
+    <input type="text" name="display_name" value="{{ user.display_name }}">
+    <div class="form-actions">
+      <button type="submit" class="button primary inline-btn action-chip">수정 완료</button>
+      <a href="{{ url_for('admin.users') }}" class="button inline-btn action-chip">취소</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

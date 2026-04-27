@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}게시글 수정{% endblock %}
+{% block content %}
+<section class="section-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>게시글 수정</h1>
+  </div>
+</section>
+<section class="card">
+  <form method="post" class="form-card">
+    <label>제목</label>
+    <input type="text" name="title" value="{{ post.title }}">
+    <label>본문</label>
+    <textarea name="content" rows="10">{{ post.content }}</textarea>
+    <div class="form-actions">
+      <button type="submit" class="button primary inline-btn action-chip">수정 완료</button>
+      <a href="{{ url_for('admin.posts') }}" class="button inline-btn action-chip">취소</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

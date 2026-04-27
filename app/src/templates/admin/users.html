@@ -4,7 +4,7 @@
 <section class="section-head">
   <div>
     <p class="eyebrow">Admin</p>
-    <h1>사용자 디렉터리</h1>
+    <h1>사용자 관리</h1>
   </div>
 </section>
 
@@ -24,6 +24,12 @@
         <span>ID {{ user.id }}</span>
         <span>{{ user.role }}</span>
         <span>{{ "{:,}".format(user.balance) }}원</span>
+      </div>
+      <div class="meta-row" style="margin-top:8px;gap:8px;">
+        <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="button inline-btn action-chip" style="font-size:13px;padding:4px 12px;background:var(--blue);color:#fff;border-color:var(--blue);">수정</a>
+        <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('{{ user.display_name }} 사용자를 삭제하시겠습니까?')">
+          <button type="submit" class="button inline-btn action-chip" style="font-size:13px;padding:4px 12px;background:var(--red);color:#fff;border-color:var(--red);">삭제</button>
+        </form>
       </div>
     </div>
   {% else %}
