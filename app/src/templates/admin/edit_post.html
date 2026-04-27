@@ -8,7 +8,7 @@
   </div>
 </section>
 <section class="card">
-  <form method="post" enctype="multipart/form-data" class="form-card">
+  <form id="edit-form" method="post" enctype="multipart/form-data" class="form-card">
     <label>제목</label>
     <input type="text" name="title" value="{{ post.title }}">
     <label>본문</label>
@@ -16,17 +16,10 @@
     <label>첨부 파일 추가</label>
     <input type="file" name="attachment">
     <p class="subtle">jpg 또는 png 파일만 업로드할 수 있습니다.</p>
-    <div class="form-actions">
-      <button type="submit" class="button primary inline-btn action-chip">수정 완료</button>
-      <a href="{{ url_for('admin.posts') }}" class="button inline-btn action-chip">취소</a>
-    </div>
   </form>
-</section>
-
-{% if files %}
-<section class="card">
-  <div class="form-card">
-    <label>현재 첨부 파일</label>
+  {% if files %}
+  <label style="display:block;margin-top:28px;">현재 첨부 파일</label>
+  <div class="form-card" style="padding:16px;background:var(--surface-soft);border-radius:var(--radius);">
     {% for file in files %}
     <div class="meta-row" style="gap:8px;align-items:center;">
       <span>{{ file.original_name }}</span>
@@ -36,6 +29,10 @@
     </div>
     {% endfor %}
   </div>
+  {% endif %}
+  <div class="form-actions" style="padding:0 0 8px;">
+    <button type="submit" form="edit-form" class="button primary inline-btn action-chip">수정 완료</button>
+    <a href="{{ url_for('admin.posts') }}" class="button inline-btn action-chip">취소</a>
+  </div>
 </section>
-{% endif %}
 {% endblock %}
