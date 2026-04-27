@@ -1,6 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+import os
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 
 from ..db import get_db
+from ..services.file_service import save_upload
 from ..utils.decorators import admin_required
 
 
@@ -142,10 +145,43 @@ def edit_post(post_id):
                 "UPDATE posts SET title=%s, content=%s, updated_at=NOW() WHERE id=%s",
                 (title, content, post_id),
             )
+            upload = request.files.get("attachment")
+            saved = save_upload(upload)
+            if saved and saved.get("error"):
+                db.rollback()
+                flash(saved["error"], "error")
+                cursor.execute("SELECT * FROM files WHERE post_id=%s ORDER BY created_at DESC", (post_id,))
+                files = cursor.fetchall()
+                return render_template("admin/edit_post.html", post=post, files=files)
+            if saved:
+                cursor.execute(
+                    "INSERT INTO files (user_id, post_id, original_name, stored_name, file_path) VALUES (%s, %s, %s, %s, %s)",
+                    (post["user_id"], post_id, saved["original_name"], saved["stored_name"], saved["file_path"]),
+                )
         db.commit()
         flash("게시글이 수정되었습니다.", "success")
-        return redirect(url_for("admin.posts"))
-    return render_template("admin/edit_post.html", post=post)
+        return redirect(url_for("admin.edit_post", post_id=post_id))
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM files WHERE post_id=%s ORDER BY created_at DESC", (post_id,))
+        files = cursor.fetchall()
+    return render_template("admin/edit_post.html", post=post, files=files)
+
+
+@admin_bp.route("/posts/<int:post_id>/files/<int:file_id>/delete", methods=["POST"])
+@admin_required
+def delete_post_file(post_id, file_id):
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM files WHERE id=%s AND post_id=%s", (file_id, post_id))
+        file_data = cursor.fetchone()
+    if file_data:
+        real_path = os.path.join(current_app.config["UPLOAD_FOLDER"], file_data["stored_name"])
+        if os.path.exists(real_path):
+            os.remove(real_path)
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM files WHERE id=%s", (file_id,))
+        db.commit()
+    return redirect(url_for("admin.edit_post", post_id=post_id))
 
 
 @admin_bp.route("/posts/<int:post_id>/delete", methods=["POST"])

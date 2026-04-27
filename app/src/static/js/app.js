@@ -504,6 +504,10 @@ function updateLiveFields(payload) {
     node.textContent = payload.latest_time_label || formatClock(payload.timestamps?.at(-1), true);
   });
 
+  document.querySelectorAll("[data-live-close]").forEach((node) => {
+    node.textContent = priceText;
+  });
+
   updateTradeForms(payload.current_price);
 }
 
