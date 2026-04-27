@@ -23,7 +23,11 @@
         {{ type_span | safe }}
         <span class="subtle" style="font-size:13px;">{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
       </div>
+      {% if tx.type in ('buy', 'sell') %}
+      <p>{{ tx.actor_name or '-' }}</p>
+      {% else %}
       <p>{{ tx.actor_name or '-' }} → {{ tx.target_name or '-' }}</p>
+      {% endif %}
       <div class="meta-row">
         <span>{{ tx.symbol or '-' }}</span>
         <span>{{ tx.quantity or '-' }}</span>
