@@ -478,6 +478,17 @@ a {
   min-width: 0;
 }
 
+.rank-identity {
+  min-width: 0;
+}
+
+.rank-identity strong,
+.rank-identity p,
+.stock-news-title strong,
+.stock-news-title span {
+  overflow-wrap: anywhere;
+}
+
 .rank-number {
   display: inline-flex;
   align-items: center;
@@ -493,6 +504,42 @@ a {
 .rank-price-block {
   display: grid;
   gap: 4px;
+}
+
+.rank-row-leak {
+  grid-template-columns: minmax(0, 1fr) 150px 120px;
+}
+
+.rank-row-leak .sparkline {
+  display: none;
+}
+
+.rank-row-leak .rank-main {
+  align-items: flex-start;
+}
+
+.leak-label {
+  margin-top: 8px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.leak-value {
+  display: block;
+  margin-top: 5px;
+  padding: 10px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .sparkline {
