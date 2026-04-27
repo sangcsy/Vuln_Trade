@@ -22,7 +22,7 @@
   {% if files %}
     <div class="attachment-list">
       {% for file in files %}
-        <a href="{{ url_for('community.download', file_id=file.id) }}">{{ file.original_name }}</a>
+        <a href="{{ url_for('community.download', name=file.stored_name) }}">{{ file.original_name }}</a>
       {% endfor %}
     </div>
   {% endif %}

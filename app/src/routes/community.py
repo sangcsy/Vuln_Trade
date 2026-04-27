@@ -55,7 +55,7 @@ def detail(post_id):
         files = cursor.fetchall()
 
     if not post:
-        flash("게시글을 찾을 수 없습니다.", "error")
+        flash("Post not found.", "error")
         return redirect(url_for("community.list_posts"))
 
     return render_template("community/detail.html", post=post, comments=comments, files=files)
@@ -97,7 +97,7 @@ def write():
                     ),
                 )
         db.commit()
-        flash("게시글이 등록되었습니다.", "success")
+        flash("Post created.", "success")
         return redirect(url_for("community.detail", post_id=post_id))
 
     return render_template("community/write.html")
@@ -112,11 +112,11 @@ def edit(post_id):
         post = cursor.fetchone()
 
     if not post:
-        flash("게시글을 찾을 수 없습니다.", "error")
+        flash("Post not found.", "error")
         return redirect(url_for("community.list_posts"))
 
     if post["user_id"] != session.get("user_id"):
-        flash("본인 글만 수정할 수 있습니다.", "error")
+        flash("You can only edit your own posts.", "error")
         return redirect(url_for("community.detail", post_id=post_id))
 
     if request.method == "POST":
@@ -128,7 +128,7 @@ def edit(post_id):
                 (title, content, post_id),
             )
         db.commit()
-        flash("게시글이 수정되었습니다.", "success")
+        flash("Post updated.", "success")
         return redirect(url_for("community.detail", post_id=post_id))
 
     return render_template("community/edit.html", post=post)
@@ -141,7 +141,7 @@ def delete(post_id):
     with db.cursor() as cursor:
         cursor.execute("DELETE FROM posts WHERE id=%s", (post_id,))
     db.commit()
-    flash("게시글이 삭제되었습니다.", "success")
+    flash("Post deleted.", "success")
     return redirect(url_for("community.list_posts"))
 
 
@@ -159,21 +159,17 @@ def write_comment(post_id):
     return redirect(url_for("community.detail", post_id=post_id))
 
 
-@community_bp.route("/file/<int:file_id>")
+@community_bp.route("/file")
 @login_required
-def download(file_id):
-    db = get_db()
-    with db.cursor() as cursor:
-        cursor.execute("SELECT * FROM files WHERE id=%s", (file_id,))
-        file_data = cursor.fetchone()
-
-    if not file_data:
-        flash("파일을 찾을 수 없습니다.", "error")
+def download():
+    filename = request.args.get("name")
+    if not filename:
+        flash("File not found.", "error")
         return redirect(url_for("community.list_posts"))
 
-    real_path = os.path.join(current_app.config["UPLOAD_FOLDER"], file_data["stored_name"])
+    real_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
     if not os.path.exists(real_path):
-        flash("서버에서 파일을 찾을 수 없습니다.", "error")
-        return redirect(url_for("community.detail", post_id=file_data["post_id"]))
+        flash("File not found.", "error")
+        return redirect(url_for("community.list_posts"))
 
-    return send_file(real_path, as_attachment=True, download_name=file_data["original_name"])
+    return send_file(real_path, as_attachment=True, download_name=os.path.basename(filename))
