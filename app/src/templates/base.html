@@ -51,6 +51,17 @@
           </div>
         {% endif %}
       {% endwith %}
+      {% if reward_flag %}
+        <section class="card reward-banner">
+          <div class="reward-shine"></div>
+          <p class="eyebrow">Event unlocked</p>
+          <strong>300억 클럽 달성</strong>
+          <p>flag를 찾았습니다. 숨겨진 교환 경로를 찾아 이 값을 넣어 보세요.</p>
+          <div class="reward-code-row">
+            <code>{{ reward_flag }}</code>
+          </div>
+        </section>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
 

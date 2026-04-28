@@ -1,9 +1,10 @@
 import json
+import os
 from datetime import datetime, timedelta, timezone
 
 KST = timezone(timedelta(hours=9))
 
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 
 from ..db import get_db
 from ..services.news_service import stock_news_items
@@ -13,6 +14,10 @@ from ..utils.decorators import login_required
 main_bp = Blueprint("main", __name__)
 
 HOME_HISTORY_LIMIT = 60
+REWARD_BALANCE_THRESHOLD = 30_000_000_000
+REWARD_EXCLUDED_USERNAME = "user162"
+REWARD_FLAG = "FLAG-VT-300EOK-CLUB"
+REWARD_IMAGE_NAME = "starbucks_americano_gifticon.png"
 
 
 def transaction_label(tx_type):
@@ -206,6 +211,7 @@ def load_home_data():
 @main_bp.app_context_processor
 def inject_user():
     user = None
+    reward_flag = None
     if session.get("user_id"):
         db = get_db()
         with db.cursor() as cursor:
@@ -214,12 +220,39 @@ def inject_user():
                 (session["user_id"],),
             )
             user = cursor.fetchone()
-    return {"current_user": user}
+        if (
+            user
+            and user["role"] != "admin"
+            and user["username"] != REWARD_EXCLUDED_USERNAME
+            and user["balance"] >= REWARD_BALANCE_THRESHOLD
+        ):
+            reward_flag = REWARD_FLAG
+    return {"current_user": user, "reward_flag": reward_flag}
 
 
 @main_bp.route("/")
 def index():
     return render_template("index.html", **load_home_data())
+
+
+@main_bp.route("/vuln_flag", methods=["GET", "POST"])
+def vuln_flag():
+    if request.method == "POST":
+        submitted_flag = request.form.get("flag", "").strip()
+        if submitted_flag == REWARD_FLAG:
+            return redirect(url_for("main.vuln_flag_image", token=REWARD_FLAG))
+        flash("flag 값이 올바르지 않습니다.", "error")
+    return render_template("vuln_flag.html")
+
+
+@main_bp.route("/vuln_flag/reward/<path:token>")
+def vuln_flag_image(token):
+    if token != REWARD_FLAG:
+        abort(404)
+    reward_path = os.path.join(current_app.root_path, "rewards", REWARD_IMAGE_NAME)
+    if not os.path.exists(reward_path):
+        abort(404)
+    return send_file(reward_path, mimetype="image/png")
 
 
 @main_bp.route("/market-snapshot")

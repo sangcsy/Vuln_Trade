@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Flag Exchange{% endblock %}
+{% block content %}
+<section class="card flag-exchange-card">
+  <p class="eyebrow">Flag Exchange</p>
+  <h1>기프티콘 교환소</h1>
+  <form method="post" class="form-card compact">
+    <label>Flag</label>
+    <input type="text" name="flag" placeholder="FLAG-...">
+    <button type="submit" class="button primary inline-btn action-chip">확인</button>
+  </form>
+</section>
+{% endblock %}
