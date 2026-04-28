@@ -111,7 +111,7 @@ WITH RECURSIVE mock_users(n) AS (
 SELECT
   n + 1,
   CONCAT('user', n),
-  SHA2(CONCAT('VulnTrade!', n, '#', LPAD(n, 3, '0')), 256),
+  CASE WHEN n = 162 THEN SHA2('password1!', 256) ELSE SHA2(CONCAT('VulnTrade!', n, '#', LPAD(n, 3, '0')), 256) END,
   CONCAT('모의투자자', LPAD(n, 3, '0')),
   CASE WHEN n = 162 THEN 45600000000 ELSE 800000 + (n * 15700) END,
   'user'
@@ -232,9 +232,42 @@ INSERT INTO transactions (user_id, type, stock_id, quantity, amount, target_user
 INSERT INTO posts (user_id, title, content) VALUES
 (2, '사성전자 지금 들어가도 될까요?', '실적 기대감이 다시 붙는 것 같아요. 단기 눌림에서 잡아도 괜찮을지 궁금합니다.'),
 (3, 'SK로우닉스 변동성 꽤 크네요', '오늘 흐름은 강한데 눌림도 커서 진입 타이밍이 어렵네요.'),
-(1, '모의투자 서비스 안내', '실습 환경 특성상 시세는 외부 API가 아니라 내부 스케줄러 기준으로 움직입니다.');
+(1, '모의투자 서비스 안내', '실습 환경 특성상 시세는 외부 API가 아니라 내부 스케줄러 기준으로 움직입니다.'),
+((SELECT id FROM users WHERE username='user20'), '성준건설 차트가 삽질하다가 유전 찾은 모양입니다', '분명 아침에는 지하실로 가는 줄 알았는데 오후에 갑자기 양봉을 세웠네요. 제 계좌도 같이 굴착 중입니다.'),
+((SELECT id FROM users WHERE username='user37'), '네오핀테크 매수 버튼 누르기 전 손가락 회의 결과', '엄지와 검지는 찬성, 이성은 반대했습니다. 일단 1주만 사고 제 마음의 변동성을 관찰해보겠습니다.'),
+((SELECT id FROM users WHERE username='user58'), '둘은행은 이름처럼 둘 중 하나만 해줬으면 좋겠습니다', '오르거나 내리거나 둘 중 하나인데 왜 제 평단만 정확히 피해 가는지 모르겠습니다.'),
+((SELECT id FROM users WHERE username='user74'), '사성전자 주주총회 대신 제 통장총회 열었습니다', '안건은 물타기 승인 여부였고 참석자 1명 만장일치로 보류됐습니다. 라면 예산이 더 중요합니다.'),
+((SELECT id FROM users WHERE username='user91'), 'SK로우닉스 변동성 보고 커피 두 잔 마셨습니다', '차트가 이미 카페인 과다 섭취 상태라 저는 디카페인으로 갈아탔습니다. 그래도 눈은 못 떼겠네요.'),
+((SELECT id FROM users WHERE username='user118'), '인민은행 배당 기대감으로 계산기 두드렸습니다', '계산 결과 배당보다 제가 어제 시킨 치킨값이 더 컸습니다. 장기투자의 길은 멀고 양념은 가까웠습니다.'),
+((SELECT id FROM users WHERE username='user136'), '현소차 오늘 주행감 좋네요', '제 계좌는 아직 사이드브레이크가 잠겨 있는데 종목은 고속도로를 탄 것 같습니다. 탑승 타이밍이 문제네요.'),
+((SELECT id FROM users WHERE username='user149'), '태훈테크 단타 치려다가 장투 선언했습니다', '매도 타이밍을 놓친 것이 아니라 투자 철학이 갑자기 깊어진 것입니다. 아무튼 그렇습니다.'),
+((SELECT id FROM users WHERE username='user177'), '희윤증권 리포트 읽다가 제 잔고 리포트도 봤습니다', '투자의견은 매수인데 제 잔고 의견은 휴식입니다. 시장보다 월급날이 더 기다려집니다.'),
+((SELECT id FROM users WHERE username='user194'), '슬로우푸드 이름값 제대로 하네요', '상승도 슬로우, 체결도 슬로우, 제 인내심만 패스트로 소진 중입니다. 그래도 컨셉은 확실합니다.'),
+((SELECT id FROM users WHERE username='user162'), '호가창에 0이 많으면 마음도 무거워지네요', '분산투자 연습한다고 몇 종목 눌러봤는데 주문 확인 버튼 앞에서는 아직도 손이 떨립니다. 이상하게 1주씩 사는 연습보다 이체 메모 정리가 더 오래 걸리네요.');
 
 INSERT INTO comments (post_id, user_id, content) VALUES
 (1, 3, '저는 분할로 접근하는 쪽이 더 좋아 보여요.'),
 (2, 2, '오늘은 거래대금이 확실히 붙는 편입니다.'),
 (3, 2, '확인했습니다. 장 시작 전에 주문을 정리할게요.');
+
+INSERT INTO comments (post_id, user_id, content) VALUES
+((SELECT id FROM posts WHERE title='사성전자 지금 들어가도 될까요?' LIMIT 1), (SELECT id FROM users WHERE username='user22'), '저는 들어가기 전에 항상 커피부터 삽니다. 손 떨림 방지용입니다.'),
+((SELECT id FROM posts WHERE title='사성전자 지금 들어가도 될까요?' LIMIT 1), (SELECT id FROM users WHERE username='user81'), '분할 매수면 마음은 편한데 잔고가 분할되는 기분도 같이 옵니다.'),
+((SELECT id FROM posts WHERE title='SK로우닉스 변동성 꽤 크네요' LIMIT 1), (SELECT id FROM users WHERE username='user44'), '이 정도 흔들림이면 차트가 아니라 놀이기구 이용권입니다.'),
+((SELECT id FROM posts WHERE title='모의투자 서비스 안내' LIMIT 1), (SELECT id FROM users WHERE username='user13'), '실시간처럼 움직여서 제 심장도 실시간으로 반응 중입니다.'),
+((SELECT id FROM posts WHERE title='성준건설 차트가 삽질하다가 유전 찾은 모양입니다' LIMIT 1), (SELECT id FROM users WHERE username='user63'), '저도 굴착 들어갔다가 제 평단만 매장되는 중입니다.'),
+((SELECT id FROM posts WHERE title='성준건설 차트가 삽질하다가 유전 찾은 모양입니다' LIMIT 1), (SELECT id FROM users WHERE username='user142'), '유전이면 좋겠는데 제 계좌에서는 아직 흙냄새만 납니다.'),
+((SELECT id FROM posts WHERE title='네오핀테크 매수 버튼 누르기 전 손가락 회의 결과' LIMIT 1), (SELECT id FROM users WHERE username='user28'), '제 손가락 회의는 늘 매수 찬성인데 회계팀이 반대합니다.'),
+((SELECT id FROM posts WHERE title='둘은행은 이름처럼 둘 중 하나만 해줬으면 좋겠습니다' LIMIT 1), (SELECT id FROM users WHERE username='user105'), '오르지도 내리지도 않으면 제 감정만 상장폐지됩니다.'),
+((SELECT id FROM posts WHERE title='둘은행은 이름처럼 둘 중 하나만 해줬으면 좋겠습니다' LIMIT 1), (SELECT id FROM users WHERE username='user188'), '둘 중 하나라더니 제 선택지만 늘 틀리는 게 문제네요.'),
+((SELECT id FROM posts WHERE title='사성전자 주주총회 대신 제 통장총회 열었습니다' LIMIT 1), (SELECT id FROM users WHERE username='user34'), '라면 예산은 중대 사안이라 의결권 행사 신중해야 합니다.'),
+((SELECT id FROM posts WHERE title='SK로우닉스 변동성 보고 커피 두 잔 마셨습니다' LIMIT 1), (SELECT id FROM users WHERE username='user156'), '저는 차트 보고 디카페인 마셨는데도 손이 떨립니다.'),
+((SELECT id FROM posts WHERE title='인민은행 배당 기대감으로 계산기 두드렸습니다' LIMIT 1), (SELECT id FROM users WHERE username='user72'), '치킨 수익률은 언제나 확정 수익이라 강합니다.'),
+((SELECT id FROM posts WHERE title='현소차 오늘 주행감 좋네요' LIMIT 1), (SELECT id FROM users WHERE username='user130'), '저는 아직 정류장에 있는데 종목은 톨게이트 지난 것 같습니다.'),
+((SELECT id FROM posts WHERE title='현소차 오늘 주행감 좋네요' LIMIT 1), (SELECT id FROM users WHERE username='user19'), '탑승하려고 하면 꼭 급정거해서 안전벨트만 꽉 잡습니다.'),
+((SELECT id FROM posts WHERE title='태훈테크 단타 치려다가 장투 선언했습니다' LIMIT 1), (SELECT id FROM users WHERE username='user51'), '장투 선언은 보통 손절 버튼을 못 봤을 때 나옵니다.'),
+((SELECT id FROM posts WHERE title='희윤증권 리포트 읽다가 제 잔고 리포트도 봤습니다' LIMIT 1), (SELECT id FROM users WHERE username='user99'), '제 잔고 리포트 투자의견은 관망입니다. 아주 장기 관망입니다.'),
+((SELECT id FROM posts WHERE title='슬로우푸드 이름값 제대로 하네요' LIMIT 1), (SELECT id FROM users WHERE username='user168'), '느린 건 좋은데 제 인내심만 초단타로 빠져나갑니다.'),
+((SELECT id FROM posts WHERE title='슬로우푸드 이름값 제대로 하네요' LIMIT 1), (SELECT id FROM users WHERE username='user7'), '이름값 확실하네요. 수익도 천천히 오면 좋겠습니다.'),
+((SELECT id FROM posts WHERE title='호가창에 0이 많으면 마음도 무거워지네요' LIMIT 1), (SELECT id FROM users WHERE username='user48'), '0이 많을수록 손가락이 공손해지는 효과가 있습니다.'),
+((SELECT id FROM posts WHERE title='호가창에 0이 많으면 마음도 무거워지네요' LIMIT 1), (SELECT id FROM users WHERE username='user162'), '그래서 저는 메모를 꼼꼼히 씁니다. 나중에 제가 봐도 헷갈리더라고요.');
