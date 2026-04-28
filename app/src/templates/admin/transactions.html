@@ -33,6 +33,9 @@
         <span>{{ tx.quantity or '-' }}</span>
         <span>{{ "{:,}".format(tx.amount) }}원</span>
       </div>
+      {% if tx.note %}
+      <p class="subtle">{{ tx.note }}</p>
+      {% endif %}
     </div>
   {% else %}
     <p class="empty">거래 내역이 없습니다.</p>

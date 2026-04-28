@@ -23,7 +23,6 @@
       <div class="meta-row">
         <span>ID {{ user.id }}</span>
         <span>{{ user.role }}</span>
-        <span>{{ "{:,}".format(user.balance) }}원</span>
       </div>
       <div class="meta-row" style="margin-top:8px;gap:8px;">
         <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="button inline-btn action-chip" style="font-size:13px;padding:4px 12px;background:var(--blue);color:#fff;border-color:var(--blue);">수정</a>
