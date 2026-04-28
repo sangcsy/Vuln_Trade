@@ -108,7 +108,7 @@
       <label>수량</label>
       <input type="number" name="quantity" min="1" value="1" data-quantity-input>
       <label>총액</label>
-      <input type="number" name="total_price" value="{{ stock.current_price }}" data-total-input>
+      <input type="number" name="total_price" value="{{ stock.current_price }}" data-total-input readonly>
       <button type="submit" class="button primary">매수하기</button>
     </form>
 
@@ -119,7 +119,7 @@
       <label>수량</label>
       <input type="number" name="quantity" min="1" value="1" max="{{ holding.quantity if holding else 0 }}" data-quantity-input>
       <label>총액</label>
-      <input type="number" name="total_price" value="{{ stock.current_price }}" data-total-input>
+      <input type="number" name="total_price" value="{{ stock.current_price }}" data-total-input readonly>
       <button type="submit" class="button dark">매도하기</button>
     </form>
   </aside>

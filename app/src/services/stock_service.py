@@ -1,9 +1,26 @@
 from .transaction_service import create_transaction
 
 
-def buy_stock(db, user_id, stock, quantity, total_price):
+MAX_TRADE_QUANTITY = 1_000_000
+
+
+def _valid_quantity(quantity):
+    return isinstance(quantity, int) and 0 < quantity <= MAX_TRADE_QUANTITY
+
+
+def buy_stock(db, user_id, stock, quantity):
+    if not _valid_quantity(quantity):
+        return False, "수량을 확인해 주세요."
+
     with db.cursor() as cursor:
-        cursor.execute("SELECT balance FROM users WHERE id=%s", (user_id,))
+        cursor.execute("SELECT id, current_price FROM stocks WHERE id=%s FOR UPDATE", (stock["id"],))
+        current_stock = cursor.fetchone()
+        if not current_stock:
+            return False, "종목을 찾을 수 없습니다."
+
+        total_price = current_stock["current_price"] * quantity
+
+        cursor.execute("SELECT balance FROM users WHERE id=%s FOR UPDATE", (user_id,))
         user = cursor.fetchone()
         if not user:
             return False, "사용자를 찾을 수 없습니다."
@@ -12,7 +29,7 @@ def buy_stock(db, user_id, stock, quantity, total_price):
             return False, "잔액이 부족합니다."
 
         cursor.execute(
-            "SELECT * FROM holdings WHERE user_id=%s AND stock_id=%s",
+            "SELECT * FROM holdings WHERE user_id=%s AND stock_id=%s FOR UPDATE",
             (user_id, stock["id"]),
         )
         holding = cursor.fetchone()
@@ -36,10 +53,20 @@ def buy_stock(db, user_id, stock, quantity, total_price):
     return True, "매수가 완료되었습니다."
 
 
-def sell_stock(db, user_id, stock, quantity, total_price):
+def sell_stock(db, user_id, stock, quantity):
+    if not _valid_quantity(quantity):
+        return False, "수량을 확인해 주세요."
+
     with db.cursor() as cursor:
+        cursor.execute("SELECT id, current_price FROM stocks WHERE id=%s FOR UPDATE", (stock["id"],))
+        current_stock = cursor.fetchone()
+        if not current_stock:
+            return False, "종목을 찾을 수 없습니다."
+
+        total_price = current_stock["current_price"] * quantity
+
         cursor.execute(
-            "SELECT * FROM holdings WHERE user_id=%s AND stock_id=%s",
+            "SELECT * FROM holdings WHERE user_id=%s AND stock_id=%s FOR UPDATE",
             (user_id, stock["id"]),
         )
         holding = cursor.fetchone()

@@ -15,6 +15,14 @@ LIST_HISTORY_LIMIT = 60
 DETAIL_HISTORY_LIMIT = 420
 
 
+def parse_positive_int(value):
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError):
+        return 0
+    return parsed if parsed > 0 else 0
+
+
 def build_history_bundle(history_rows, current_price, time_format="%H:%M:%S"):
     prices = [row["current_price"] for row in history_rows] or [current_price]
     kst_times = [row["recorded_at"].replace(tzinfo=timezone.utc).astimezone(KST) for row in history_rows]
@@ -137,8 +145,7 @@ def stock_detail(stock_id):
             flash("\ub85c\uadf8\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.", "error")
             return redirect(url_for("auth.login"))
 
-        quantity = int(request.form.get("quantity", "0") or 0)
-        total_price = int(float(request.form.get("total_price", "0") or 0))
+        quantity = parse_positive_int(request.form.get("quantity"))
         action = request.form.get("action")
 
         if quantity <= 0:
@@ -146,9 +153,11 @@ def stock_detail(stock_id):
             return redirect(url_for("stocks.stock_detail", stock_id=stock_id))
 
         if action == "buy":
-            ok, message = buy_stock(db, session["user_id"], stock, quantity, total_price)
+            ok, message = buy_stock(db, session["user_id"], stock, quantity)
+        elif action == "sell":
+            ok, message = sell_stock(db, session["user_id"], stock, quantity)
         else:
-            ok, message = sell_stock(db, session["user_id"], stock, quantity, total_price)
+            ok, message = False, "\uc694\uccad\uc744 \ud655\uc778\ud574 \uc8fc\uc138\uc694."
 
         flash(message, "success" if ok else "error")
         return redirect(url_for("stocks.stock_detail", stock_id=stock_id))

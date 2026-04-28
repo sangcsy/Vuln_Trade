@@ -8,6 +8,14 @@ from ..utils.decorators import login_required
 wallet_bp = Blueprint("wallet", __name__)
 
 
+def parse_positive_int(value):
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError):
+        return 0
+    return parsed if parsed > 0 else 0
+
+
 def decorate_transfer(tx, current_user_id):
     is_outgoing = tx["type"] == "transfer_out"
     tx["direction_label"] = "보냄" if is_outgoing else "받음"
@@ -56,8 +64,8 @@ def transfer():
         transactions = [decorate_transfer(tx, session["user_id"]) for tx in cursor.fetchall()]
 
     if request.method == "POST":
-        target_user_id = int(request.form.get("target_user_id", "0") or 0)
-        amount = int(float(request.form.get("amount", "0") or 0))
+        target_user_id = parse_positive_int(request.form.get("target_user_id"))
+        amount = parse_positive_int(request.form.get("amount"))
         note = request.form.get("note", "")
 
         ok, message = transfer_balance(db, session["user_id"], target_user_id, amount, note)
