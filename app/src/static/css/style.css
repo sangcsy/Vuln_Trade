@@ -1274,6 +1274,14 @@ textarea {
   width: auto;
 }
 
+.sidebar-link-btn {
+  padding: 9px 14px;
+  min-height: 34px;
+  font-size: 13px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 .feed-write-btn {
   margin-left: 16px;
 }

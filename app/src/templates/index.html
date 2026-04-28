@@ -106,7 +106,7 @@
     <div class="sidebar-block">
       <div class="sidebar-head">
         <h3>&#48372;&#50976; &#51333;&#47785;</h3>
-        <a href="{{ url_for('stocks.portfolio') }}">&#51204;&#52404;</a>
+        <a class="button ghost inline-btn sidebar-link-btn" href="{{ url_for('stocks.portfolio') }}">&#51204;&#52404;</a>
       </div>
       <div class="account-list" data-account-list>
         {% for item in account_stocks %}
@@ -131,12 +131,12 @@
     <div class="sidebar-block">
       <div class="sidebar-head">
         <h3>&#52572;&#44540; &#51452;&#47928; &#45236;&#50669;</h3>
-        <a href="{{ url_for('stocks.trade_history', user_id=current_user.id) }}">&#51204;&#52404;</a>
+        <a class="button ghost inline-btn sidebar-link-btn" href="{{ url_for('stocks.trade_history', user_id=current_user.id) }}">&#51204;&#52404;</a>
       </div>
       <div class="order-list" data-order-list>
         {% for tx in recent_orders %}
         <div class="order-row" data-order-row>
-          <strong data-order-type>{{ tx.display_type }}</strong>
+          <span class="mypage-trade-badge {{ tx.type }}" data-order-type>{{ tx.display_type }}</span>
           <p data-order-meta>{{ tx.meta }}</p>
         </div>
         {% else %}
@@ -147,18 +147,18 @@
 
     <div class="sidebar-block">
       <div class="sidebar-head">
-        <h3>&#52572;&#44540; &#49569;&#44552; &#45236;&#50669;</h3>
-        <a href="{{ url_for('wallet.history', user_id=current_user.id) }}">&#51204;&#52404;</a>
+        <h3>최근 입출금 내역</h3>
+        <a class="button ghost inline-btn sidebar-link-btn" href="{{ url_for('wallet.history', user_id=current_user.id) }}">&#51204;&#52404;</a>
       </div>
       <div class="order-list" data-transfer-list>
         {% for tx in recent_transfers %}
         <div class="order-row" data-transfer-row>
-          <strong data-transfer-type>{{ tx.display_type }}</strong>
+          <span class="mypage-transfer-badge {{ tx.type }}" data-transfer-type>{{ tx.display_type }}</span>
           <p data-transfer-meta>{{ tx.meta }}</p>
           <p class="subtle">{{ "{:,}".format(tx.amount) }}&#50896;</p>
         </div>
         {% else %}
-        <p class="empty">&#49569;&#44552; &#45236;&#50669;&#51060; &#50630;&#49845;&#45768;&#45796;.</p>
+        <p class="empty">입출금 내역이 없습니다.</p>
         {% endfor %}
       </div>
     </div>

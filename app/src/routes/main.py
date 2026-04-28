@@ -295,6 +295,7 @@ def market_snapshot():
             ],
             "recent_orders": [
                 {
+                    "type": tx["type"],
                     "display_type": tx["display_type"],
                     "meta": tx["meta"],
                 }
@@ -302,6 +303,7 @@ def market_snapshot():
             ],
             "recent_transfers": [
                 {
+                    "type": tx["type"],
                     "display_type": tx["display_type"],
                     "meta": tx["meta"],
                     "amount": tx["amount"],

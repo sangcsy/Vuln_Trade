@@ -808,12 +808,18 @@ function renderAccountRow(row, stock) {
 }
 
 function renderOrderRow(row, item) {
-  row.querySelector("[data-order-type]").textContent = item.display_type;
+  const typeNode = row.querySelector("[data-order-type]");
+  typeNode.textContent = item.display_type;
+  typeNode.classList.remove("buy", "sell");
+  if (item.type) typeNode.classList.add(item.type);
   row.querySelector("[data-order-meta]").textContent = item.meta;
 }
 
 function renderTransferRow(row, item) {
-  row.querySelector("[data-transfer-type]").textContent = item.display_type;
+  const typeNode = row.querySelector("[data-transfer-type]");
+  typeNode.textContent = item.display_type;
+  typeNode.classList.remove("transfer_in", "transfer_out");
+  if (item.type) typeNode.classList.add(item.type);
   row.querySelector("[data-transfer-meta]").textContent = item.meta;
   const amountNode = row.querySelector(".subtle");
   if (amountNode) amountNode.textContent = formatKrw(item.amount);
