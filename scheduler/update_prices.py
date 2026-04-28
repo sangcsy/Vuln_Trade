@@ -38,13 +38,10 @@ def update_prices():
     db = connect()
     with db.cursor() as cursor:
         ensure_history_table(cursor)
-        cursor.execute("SELECT id, current_price, initial_price FROM stocks")
+        cursor.execute("SELECT id, current_price FROM stocks")
         stocks = cursor.fetchall()
         for stock in stocks:
             rate = random.uniform(-0.05, 0.05)
-            if stock["current_price"] < stock["initial_price"]:
-                pull = (stock["initial_price"] - stock["current_price"]) / stock["initial_price"] * 0.02
-                rate += pull
             new_price = max(100, int(stock["current_price"] * (1 + rate)))
             cursor.execute(
                 "UPDATE stocks SET current_price=%s, updated_at=NOW() WHERE id=%s",
@@ -74,7 +71,7 @@ def update_prices():
 
 
 if __name__ == "__main__":
-    interval = int(os.getenv("PRICE_UPDATE_INTERVAL", "1"))
+    interval = int(os.getenv("PRICE_UPDATE_INTERVAL", "10"))
     while True:
         try:
             update_prices()

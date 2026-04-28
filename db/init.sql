@@ -30,7 +30,6 @@ CREATE TABLE stocks (
   name VARCHAR(100) NOT NULL,
   symbol VARCHAR(20) NOT NULL UNIQUE,
   current_price INT NOT NULL,
-  initial_price INT NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -105,29 +104,29 @@ INSERT INTO users (username, password, display_name, balance, role) VALUES
 ('user1', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', '김민준', 1200000, 'user'),
 ('user2', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', '박서윤', 900000, 'user');
 
-INSERT INTO stocks (name, symbol, current_price, initial_price) VALUES
-('사성전자', 'SSJ', 81200, 81200),
-('SK로우닉스', 'SKL', 163500, 163500),
-('현소차', 'HSC', 214000, 214000),
-('현재오토네버', 'HAN', 178400, 178400),
-('퀴아', 'KIA', 126500, 126500),
-('두화', 'DWH', 48700, 48700),
-('너희은행', 'NHB', 16200, 16200),
-('둘은행', 'DBK', 9580, 9580),
-('제이뱅크', 'JBK', 22400, 22400),
-('인민은행', 'PMB', 13150, 13150),
-('태훈테크', 'THT', 54800, 54800),
-('수진바이오', 'SJB', 38200, 38200),
-('은결홀딩스', 'EGH', 67400, 67400),
-('희윤증권', 'HYC', 29400, 29400),
-('성준건설', 'SJC', 42150, 42150),
-('대한모터스', 'DHM', 58700, 58700),
-('한결바이오', 'HGB', 44200, 44200),
-('네오핀테크', 'NEO', 73100, 73100),
-('경석네트워크', 'KSN', 95000, 95000),
-('민성게임즈', 'MSG', 68000, 68000),
-('승원토건', 'SWC', 42000, 42000),
-('슬로우푸드', 'SLF', 31000, 31000);
+INSERT INTO stocks (name, symbol, current_price) VALUES
+('사성전자', 'SSJ', 81200),
+('SK로우닉스', 'SKL', 163500),
+('현소차', 'HSC', 214000),
+('현재오토네버', 'HAN', 178400),
+('퀴아', 'KIA', 126500),
+('두화', 'DWH', 48700),
+('너희은행', 'NHB', 16200),
+('둘은행', 'DBK', 9580),
+('제이뱅크', 'JBK', 22400),
+('인민은행', 'PMB', 13150),
+('태훈테크', 'THT', 54800),
+('수진바이오', 'SJB', 38200),
+('은결홀딩스', 'EGH', 67400),
+('희윤증권', 'HYC', 29400),
+('성준건설', 'SJC', 42150),
+('대한모터스', 'DHM', 58700),
+('한결바이오', 'HGB', 44200),
+('네오핀테크', 'NEO', 73100),
+('경석네트워크', 'KSN', 95000),
+('민성게임즈', 'MSG', 68000),
+('승원토건', 'SWC', 42000),
+('슬로우푸드', 'SLF', 31000);
 
 INSERT INTO stock_price_history (stock_id, current_price, recorded_at) VALUES
 (1, 76800, NOW() - INTERVAL 115 MINUTE),
