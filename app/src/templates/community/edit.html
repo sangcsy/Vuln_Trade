@@ -3,14 +3,32 @@
 {% block content %}
 <section class="card">
   <h1>게시글 수정</h1>
-  <form method="post" class="form-card">
+  <form id="edit-form" method="post" enctype="multipart/form-data" class="form-card">
     <label>제목</label>
     <input type="text" name="title" value="{{ post.title }}">
     <label>본문</label>
     <textarea name="content" rows="10">{{ post.content }}</textarea>
-    <div class="form-actions">
-      <button type="submit" class="button primary inline-btn action-chip">수정 완료</button>
-    </div>
+    <label>첨부 파일 추가</label>
+    <input type="file" name="attachment">
+    <p class="subtle">jpg 또는 png 파일만 업로드할 수 있습니다.</p>
   </form>
+
+  {% if files %}
+  <label style="display:block;margin-top:28px;">현재 첨부 파일</label>
+  <div class="form-card" style="padding:16px;background:var(--surface-soft);border-radius:var(--radius);">
+    {% for file in files %}
+    <div class="meta-row" style="gap:8px;align-items:center;">
+      <span>{{ file.original_name }}</span>
+      <form method="post" action="{{ url_for('community.delete_file', post_id=post.id, file_id=file.id) }}" onsubmit="return confirm('이 파일을 삭제하시겠습니까?')">
+        <button type="submit" class="button inline-btn action-chip" style="font-size:12px;padding:3px 10px;background:var(--red);color:#fff;border-color:var(--red);">삭제</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="form-actions">
+    <button type="submit" form="edit-form" class="button primary inline-btn action-chip">수정 완료</button>
+  </div>
 </section>
 {% endblock %}

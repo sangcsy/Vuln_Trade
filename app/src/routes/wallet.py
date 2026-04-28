@@ -32,7 +32,7 @@ def decorate_transfer(tx, current_user_id):
 def transfer():
     db = get_db()
     with db.cursor() as cursor:
-        cursor.execute("SELECT id, username, display_name FROM users WHERE id != %s ORDER BY id", (session["user_id"],))
+        cursor.execute("SELECT id, display_name FROM users WHERE id != %s ORDER BY id", (session["user_id"],))
         users = cursor.fetchall()
         cursor.execute("SELECT balance FROM users WHERE id=%s", (session["user_id"],))
         user_row = cursor.fetchone()

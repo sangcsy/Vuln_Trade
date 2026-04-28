@@ -17,7 +17,7 @@
       <label>받는 사람</label>
       <select name="target_user_id">
         {% for user in users %}
-        <option value="{{ user.id }}">{{ user.display_name }} ({{ user.username }})</option>
+        <option value="{{ user.id }}">{{ user.display_name }}</option>
         {% endfor %}
       </select>
       <label>금액</label>

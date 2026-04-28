@@ -127,11 +127,64 @@ def edit(post_id):
                 "UPDATE posts SET title=%s, content=%s, updated_at=NOW() WHERE id=%s",
                 (title, content, post_id),
             )
+            upload = request.files.get("attachment")
+            saved = save_upload(upload)
+            if saved and saved.get("error"):
+                db.rollback()
+                flash(saved["error"], "error")
+                cursor.execute("SELECT * FROM files WHERE post_id=%s ORDER BY created_at DESC", (post_id,))
+                files = cursor.fetchall()
+                return render_template("community/edit.html", post=post, files=files)
+            if saved:
+                cursor.execute(
+                    """
+                    INSERT INTO files (user_id, post_id, original_name, stored_name, file_path)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        session["user_id"],
+                        post_id,
+                        saved["original_name"],
+                        saved["stored_name"],
+                        saved["file_path"],
+                    ),
+                )
         db.commit()
         flash("Post updated.", "success")
         return redirect(url_for("community.detail", post_id=post_id))
 
-    return render_template("community/edit.html", post=post)
+    with db.cursor() as cursor:
+        cursor.execute("SELECT * FROM files WHERE post_id=%s ORDER BY created_at DESC", (post_id,))
+        files = cursor.fetchall()
+    return render_template("community/edit.html", post=post, files=files)
+
+
+@community_bp.route("/<int:post_id>/files/<int:file_id>/delete", methods=["POST"])
+@login_required
+def delete_file(post_id, file_id):
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("SELECT user_id FROM posts WHERE id=%s", (post_id,))
+        post = cursor.fetchone()
+        if not post:
+            flash("Post not found.", "error")
+            return redirect(url_for("community.list_posts"))
+        if post["user_id"] != session.get("user_id"):
+            flash("You can only edit your own posts.", "error")
+            return redirect(url_for("community.detail", post_id=post_id))
+
+        cursor.execute("SELECT * FROM files WHERE id=%s AND post_id=%s", (file_id, post_id))
+        file_data = cursor.fetchone()
+
+    if file_data:
+        real_path = os.path.join(current_app.config["UPLOAD_FOLDER"], file_data["stored_name"])
+        if os.path.exists(real_path):
+            os.remove(real_path)
+        with db.cursor() as cursor:
+            cursor.execute("DELETE FROM files WHERE id=%s", (file_id,))
+        db.commit()
+
+    return redirect(url_for("community.edit", post_id=post_id))
 
 
 @community_bp.route("/<int:post_id>/delete", methods=["POST"])
