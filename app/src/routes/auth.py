@@ -68,7 +68,7 @@ def login():
     return render_template("auth/login.html")
 
 
-@auth_bp.route("/admin-login", methods=["GET", "POST"])
+@auth_bp.route("/admin_login", methods=["GET", "POST"])
 def admin_login():
     next_url = request.args.get("next") or request.form.get("next") or url_for("admin.dashboard")
 
