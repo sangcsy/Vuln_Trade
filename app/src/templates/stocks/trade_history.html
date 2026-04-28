@@ -7,10 +7,15 @@
     <h1>주문 내역</h1>
   </div>
 </section>
+<nav class="transaction-tabs history-tabs" aria-label="주문 내역 필터">
+  {% for key, tab in trade_tabs.items() %}
+  <a class="transaction-tab tab-{{ key }} {% if active_tab == key %}is-active{% endif %}" href="{{ url_for('stocks.trade_history', tab=key, user_id=selected_user_id) }}">{{ tab[0] }}</a>
+  {% endfor %}
+</nav>
 <div class="feed-list">
   {% for tx in transactions %}
     <div class="feed-item">
-      <strong>{{ '매수' if tx.type == 'buy' else '매도' }}</strong>
+      <span class="mypage-trade-badge {{ tx.type }}">{{ '매수' if tx.type == 'buy' else '매도' }}</span>
       <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
       <div class="meta-row">
         <span>{{ tx.stock_name or tx.symbol or '-' }}</span>

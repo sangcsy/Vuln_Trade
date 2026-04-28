@@ -372,7 +372,7 @@ a {
 
 .transfer-history-card {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   height: var(--transfer-history-height, auto);
   max-height: var(--transfer-history-height, none);
@@ -386,6 +386,72 @@ a {
   overflow-y: auto;
   padding-right: 6px;
   align-content: start;
+}
+
+.transaction-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.transaction-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.transaction-tab.is-active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.transaction-tab.tab-in {
+  background: #fff;
+  border-color: var(--line);
+  color: #4b5563;
+}
+
+.transaction-tab.tab-in.is-active {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.transaction-tab.tab-out {
+  background: #fff;
+  border-color: var(--line);
+  color: #4b5563;
+}
+
+.transaction-tab.tab-out.is-active {
+  background: #fff7e6;
+  border-color: #fed7aa;
+  color: #b45309;
+}
+
+.transaction-tab.tab-buy.is-active {
+  background: #fff0f1;
+  border-color: #fecdd3;
+  color: var(--red);
+}
+
+.transaction-tab.tab-sell.is-active {
+  background: #eef4ff;
+  border-color: #bfdbfe;
+  color: var(--blue);
+}
+
+.history-tabs {
+  margin-bottom: 18px;
 }
 
 .market-board {
@@ -1339,13 +1405,13 @@ textarea {
 }
 
 .transfer-direction.outgoing {
-  background: #fff1f2;
-  color: #b42318;
+  background: #fff7e6;
+  color: #b45309;
 }
 
 .transfer-direction.incoming {
-  background: #eef4ff;
-  color: #1d4ed8;
+  background: #ecfdf3;
+  color: #166534;
 }
 
 .transfer-route {

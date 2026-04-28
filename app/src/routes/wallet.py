@@ -7,6 +7,12 @@ from ..utils.decorators import login_required
 
 wallet_bp = Blueprint("wallet", __name__)
 
+TRANSFER_TABS = {
+    "all": ("전체", ("transfer_in", "transfer_out")),
+    "in": ("입금", ("transfer_in",)),
+    "out": ("출금", ("transfer_out",)),
+}
+
 
 def parse_positive_int(value):
     try:
@@ -16,9 +22,15 @@ def parse_positive_int(value):
     return parsed if parsed > 0 else 0
 
 
+def get_transfer_tab():
+    tab = request.args.get("tab", "all")
+    return tab if tab in TRANSFER_TABS else "all"
+
+
 def decorate_transfer(tx, current_user_id):
     is_outgoing = tx["type"] == "transfer_out"
-    tx["direction_label"] = "보냄" if is_outgoing else "받음"
+    tx["display_type"] = "출금" if is_outgoing else "입금"
+    tx["direction_label"] = tx["display_type"]
     tx["direction_class"] = "outgoing" if is_outgoing else "incoming"
     tx["from_name"] = tx["sender_name"] or "-"
     tx["to_name"] = tx["receiver_name"] or "-"
@@ -30,6 +42,8 @@ def decorate_transfer(tx, current_user_id):
 @wallet_bp.route("/transfer", methods=["GET", "POST"])
 @login_required
 def transfer():
+    active_tab = get_transfer_tab()
+    tab_types = TRANSFER_TABS[active_tab][1]
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute("SELECT id, display_name FROM users WHERE id != %s ORDER BY id", (session["user_id"],))
@@ -55,11 +69,11 @@ def transfer():
                 ELSE NULL
             END
             WHERE t.user_id=%s
-              AND t.type IN ('transfer_in', 'transfer_out')
+              AND t.type IN %s
             ORDER BY t.created_at DESC
             LIMIT 8
             """,
-            (session["user_id"],),
+            (session["user_id"], tab_types),
         )
         transactions = [decorate_transfer(tx, session["user_id"]) for tx in cursor.fetchall()]
 
@@ -77,12 +91,16 @@ def transfer():
         users=users,
         balance=user_row["balance"] if user_row else 0,
         transactions=transactions,
+        transfer_tabs=TRANSFER_TABS,
+        active_tab=active_tab,
     )
 
 
 @wallet_bp.route("/history")
 @login_required
 def history():
+    active_tab = get_transfer_tab()
+    tab_types = TRANSFER_TABS[active_tab][1]
     user_id = request.args.get("user_id", session["user_id"])
     db = get_db()
     with db.cursor() as cursor:
@@ -105,10 +123,16 @@ def history():
                 ELSE NULL
             END
             WHERE t.user_id=%s
-              AND t.type IN ('transfer_in', 'transfer_out')
+              AND t.type IN %s
             ORDER BY t.created_at DESC
             """,
-            (user_id,),
+            (user_id, tab_types),
         )
         transactions = [decorate_transfer(tx, session["user_id"]) for tx in cursor.fetchall()]
-    return render_template("wallet/history.html", transactions=transactions)
+    return render_template(
+        "wallet/history.html",
+        transactions=transactions,
+        transfer_tabs=TRANSFER_TABS,
+        active_tab=active_tab,
+        selected_user_id=user_id,
+    )

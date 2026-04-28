@@ -9,6 +9,19 @@ from ..utils.decorators import admin_required
 
 admin_bp = Blueprint("admin", __name__)
 
+TRANSACTION_TABS = {
+    "all": ("전체", ("buy", "sell", "transfer_in", "transfer_out")),
+    "buy": ("매수", ("buy",)),
+    "sell": ("매도", ("sell",)),
+    "in": ("입금", ("transfer_in",)),
+    "out": ("출금", ("transfer_out",)),
+}
+
+
+def get_transaction_tab():
+    tab = request.args.get("tab", "all")
+    return tab if tab in TRANSACTION_TABS else "all"
+
 
 @admin_bp.route("")
 @admin_bp.route("/")
@@ -59,6 +72,8 @@ def users():
 @admin_bp.route("/transactions")
 @admin_required
 def transactions():
+    active_tab = get_transaction_tab()
+    tab_types = TRANSACTION_TABS[active_tab][1]
     db = get_db()
     with db.cursor() as cursor:
         cursor.execute(
@@ -68,12 +83,19 @@ def transactions():
             LEFT JOIN users u ON u.id = t.user_id
             LEFT JOIN users tu ON tu.id = t.target_user_id
             LEFT JOIN stocks s ON s.id = t.stock_id
+            WHERE t.type IN %s
             ORDER BY t.created_at DESC
             LIMIT 100
-            """
+            """,
+            (tab_types,),
         )
         transactions = cursor.fetchall()
-    return render_template("admin/transactions.html", transactions=transactions)
+    return render_template(
+        "admin/transactions.html",
+        transactions=transactions,
+        transaction_tabs=TRANSACTION_TABS,
+        active_tab=active_tab,
+    )
 
 
 @admin_bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])

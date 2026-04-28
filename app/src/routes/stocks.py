@@ -13,6 +13,16 @@ stocks_bp = Blueprint("stocks", __name__)
 
 LIST_HISTORY_LIMIT = 60
 DETAIL_HISTORY_LIMIT = 420
+TRADE_TABS = {
+    "all": ("전체", ("buy", "sell")),
+    "buy": ("매수", ("buy",)),
+    "sell": ("매도", ("sell",)),
+}
+
+
+def get_trade_tab():
+    tab = request.args.get("tab", "all")
+    return tab if tab in TRADE_TABS else "all"
 
 
 def parse_positive_int(value):
@@ -289,6 +299,8 @@ def portfolio_snapshot():
 @stocks_bp.route("/history")
 @login_required
 def trade_history():
+    active_tab = get_trade_tab()
+    tab_types = TRADE_TABS[active_tab][1]
     user_id = request.args.get("user_id", session["user_id"])
     db = get_db()
     with db.cursor() as cursor:
@@ -298,10 +310,16 @@ def trade_history():
             FROM transactions t
             LEFT JOIN stocks s ON s.id = t.stock_id
             WHERE t.user_id=%s
-              AND t.type IN ('buy', 'sell')
+              AND t.type IN %s
             ORDER BY t.created_at DESC
             """,
-            (user_id,),
+            (user_id, tab_types),
         )
         transactions = cursor.fetchall()
-    return render_template("stocks/trade_history.html", transactions=transactions)
+    return render_template(
+        "stocks/trade_history.html",
+        transactions=transactions,
+        trade_tabs=TRADE_TABS,
+        active_tab=active_tab,
+        selected_user_id=user_id,
+    )

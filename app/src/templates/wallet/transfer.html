@@ -23,7 +23,7 @@
       <label>금액</label>
       <input type="number" name="amount" value="10000" min="1">
       <label>메모</label>
-      <input type="text" name="note" placeholder="예: 식사 정산">
+      <input type="text" name="note" placeholder="예: 행사 정산">
       <button type="submit" class="button primary">송금하기</button>
     </form>
   </div>
@@ -32,15 +32,19 @@
     <div class="section-head">
       <div>
         <p class="eyebrow">Wallet</p>
-        <h2>최근 송금 내역</h2>
+        <h2>최근 입출금 내역</h2>
       </div>
     </div>
+    <nav class="transaction-tabs" aria-label="입출금 내역 필터">
+      {% for key, tab in transfer_tabs.items() %}
+      <a class="transaction-tab tab-{{ key }} {% if active_tab == key %}is-active{% endif %}" href="{{ url_for('wallet.transfer', tab=key) }}">{{ tab[0] }}</a>
+      {% endfor %}
+    </nav>
     <div class="feed-list transfer-history-list">
       {% for tx in transactions %}
       <div class="feed-item transfer-feed-item">
         <div class="transfer-title-row">
-          <strong>{{ tx.display_type if tx.display_type else ('송금' if tx.type == 'transfer_out' else '송금 입금') }}</strong>
-          <span class="transfer-direction {{ tx.direction_class }}">{{ tx.direction_label }}</span>
+          <span class="transfer-direction {{ tx.direction_class }}">{{ tx.display_type }}</span>
         </div>
         <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
         <div class="transfer-route">
@@ -54,7 +58,7 @@
         <p class="subtle">{{ tx.note or '' }}</p>
       </div>
       {% else %}
-      <p class="empty">송금 내역이 없습니다.</p>
+      <p class="empty">입출금 내역이 없습니다.</p>
       {% endfor %}
     </div>
   </div>

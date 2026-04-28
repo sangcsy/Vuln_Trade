@@ -1,18 +1,22 @@
 {% extends "base.html" %}
-{% block title %}송금 내역{% endblock %}
+{% block title %}입출금 내역{% endblock %}
 {% block content %}
 <section class="section-head">
   <div>
     <p class="eyebrow">Wallet</p>
-    <h1>송금 내역</h1>
+    <h1>입출금 내역</h1>
   </div>
 </section>
+<nav class="transaction-tabs history-tabs" aria-label="입출금 내역 필터">
+  {% for key, tab in transfer_tabs.items() %}
+  <a class="transaction-tab tab-{{ key }} {% if active_tab == key %}is-active{% endif %}" href="{{ url_for('wallet.history', tab=key, user_id=selected_user_id) }}">{{ tab[0] }}</a>
+  {% endfor %}
+</nav>
 <div class="feed-list">
   {% for tx in transactions %}
     <div class="feed-item transfer-feed-item">
       <div class="transfer-title-row">
-        <strong>{{ '송금' if tx.type == 'transfer_out' else '송금 입금' }}</strong>
-        <span class="transfer-direction {{ tx.direction_class }}">{{ tx.direction_label }}</span>
+        <span class="transfer-direction {{ tx.direction_class }}">{{ tx.display_type }}</span>
       </div>
       <p>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
       <div class="transfer-route">
@@ -26,7 +30,7 @@
       <p class="subtle">{{ tx.note or '' }}</p>
     </div>
   {% else %}
-    <p class="empty">송금 내역이 없습니다.</p>
+    <p class="empty">입출금 내역이 없습니다.</p>
   {% endfor %}
 </div>
 {% endblock %}

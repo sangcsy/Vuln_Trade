@@ -92,7 +92,7 @@ def build_order_meta(tx):
 
 
 def build_transfer_meta(tx):
-    direction = "보냄" if tx["type"] == "transfer_out" else "받음"
+    direction = "출금" if tx["type"] == "transfer_out" else "입금"
     return f"{direction} · {tx['sender_name'] or '-'} → {tx['receiver_name'] or '-'}"
 
 
@@ -410,7 +410,7 @@ def profile():
         tx["type_label"] = "매수" if tx["type"] == "buy" else "매도"
 
     for tx in recent_transfers:
-        tx["direction_label"] = "보냄" if tx["type"] == "transfer_out" else "받음"
+        tx["direction_label"] = "출금" if tx["type"] == "transfer_out" else "입금"
 
     return render_template(
         "mypage/profile.html",
