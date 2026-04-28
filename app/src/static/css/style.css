@@ -777,6 +777,52 @@ a {
   background: var(--surface);
 }
 
+.feed-card.is-pinned {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.pin-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.pagination a {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.pagination a.is-active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
 .feed-preview,
 .content-body {
   margin-top: 12px;

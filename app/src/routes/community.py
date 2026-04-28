@@ -9,21 +9,42 @@ from ..utils.decorators import login_required
 
 community_bp = Blueprint("community", __name__)
 
+POSTS_PER_PAGE = 16
+
 
 @community_bp.route("/")
 def list_posts():
+    try:
+        page = max(int(request.args.get("page", 1)), 1)
+    except ValueError:
+        page = 1
+
     db = get_db()
     with db.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) AS cnt FROM posts")
+        total_posts = cursor.fetchone()["cnt"]
+        total_pages = max((total_posts + POSTS_PER_PAGE - 1) // POSTS_PER_PAGE, 1)
+        page = min(page, total_pages)
+        offset = (page - 1) * POSTS_PER_PAGE
         cursor.execute(
             """
-            SELECT p.id, p.title, p.content, p.created_at, p.updated_at, u.display_name
+            SELECT p.id, p.title, p.content, p.created_at, p.updated_at, u.display_name,
+                   CASE WHEN u.role = 'admin' THEN 1 ELSE 0 END AS is_pinned
             FROM posts p
             JOIN users u ON u.id = p.user_id
-            ORDER BY p.created_at DESC
+            ORDER BY is_pinned DESC, p.created_at DESC
+            LIMIT %s OFFSET %s
             """
+            ,
+            (POSTS_PER_PAGE, offset),
         )
         posts = cursor.fetchall()
-    return render_template("community/list.html", posts=posts)
+    return render_template(
+        "community/list.html",
+        posts=posts,
+        page=page,
+        total_pages=total_pages,
+    )
 
 
 @community_bp.route("/<int:post_id>")
@@ -98,7 +119,7 @@ def write():
                 )
         db.commit()
         flash("Post created.", "success")
-        return redirect(url_for("community.detail", post_id=post_id))
+        return redirect(url_for("community.list_posts"))
 
     return render_template("community/write.html")
 
