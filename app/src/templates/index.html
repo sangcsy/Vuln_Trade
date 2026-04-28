@@ -187,7 +187,6 @@
     <a class="feed-card" href="{{ url_for('community.detail', post_id=post.id) }}">
       <strong>{{ post.title }}</strong>
       <p>{{ post.display_name }} &#183; {{ post.created_at.strftime('%m.%d %H:%M') }}</p>
-      <div class="feed-preview">{{ post.content[:140] }}</div>
     </a>
     {% endfor %}
   </div>
