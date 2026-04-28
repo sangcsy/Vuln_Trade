@@ -1,3 +1,4 @@
+import hashlib
 import random
 from datetime import datetime, timedelta
 
@@ -5,7 +6,97 @@ import pymysql
 from flask import current_app, g
 
 
-ADMIN_PASSWORD_HASH = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
+ADMIN_USERNAME = "vuln@admin"
+ADMIN_PASSWORD_HASH = "5206b8b8a996cf5320cb12ca91c7b790fba9f030408efe83ebb83548dc3007bd"
+MOCK_USER_COUNT = 200
+VIP_MOCK_USER_INDEX = 162
+VIP_MOCK_BALANCE = 45_600_000_000
+
+
+def _mock_password_hash(index):
+    raw_password = f"VulnTrade!{index}#{index:03d}"
+    return hashlib.sha256(raw_password.encode("utf-8")).hexdigest()
+
+
+def _mock_balance(index):
+    if index == VIP_MOCK_USER_INDEX:
+        return VIP_MOCK_BALANCE
+    return 800_000 + (index * 15_700)
+
+
+def _ensure_mock_users(cursor):
+    for index in range(1, MOCK_USER_COUNT + 1):
+        username = f"user{index}"
+        display_name = f"모의투자자{index:03d}"
+        cursor.execute("SELECT id FROM users WHERE username=%s", (username,))
+        existing = cursor.fetchone()
+        if existing:
+            cursor.execute(
+                """
+                UPDATE users
+                SET password=%s, display_name=%s, balance=%s, role='user'
+                WHERE username=%s
+                """,
+                (_mock_password_hash(index), display_name, _mock_balance(index), username),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO users (username, password, display_name, balance, role)
+                VALUES (%s, %s, %s, %s, 'user')
+                """,
+                (username, _mock_password_hash(index), display_name, _mock_balance(index)),
+            )
+
+
+def _seed_vip_transfer_history(cursor):
+    transfer_specs = [
+        ("user162", "transfer_out", "user17", 300_000_000, "프라임 블록딜 정산", 11),
+        ("user17", "transfer_in", "user162", 300_000_000, "프라임 블록딜 정산 수신", 11),
+        ("user43", "transfer_out", "user162", 120_000_000, "장외 매각 대금", 24),
+        ("user162", "transfer_in", "user43", 120_000_000, "장외 매각 대금 수신", 24),
+        ("user162", "transfer_out", "user77", 250_000_000, "고액 담보 이체", 37),
+        ("user77", "transfer_in", "user162", 250_000_000, "고액 담보 이체 수신", 37),
+        ("user120", "transfer_out", "user162", 180_000_000, "투자금 회수", 52),
+        ("user162", "transfer_in", "user120", 180_000_000, "투자금 회수 수신", 52),
+        ("user162", "transfer_out", "user138", 100_000_000, "단기 운용금 이동", 68),
+        ("user138", "transfer_in", "user162", 100_000_000, "단기 운용금 이동 수신", 68),
+        ("user162", "transfer_out", "user195", 275_000_000, "기관 계좌 정산", 83),
+        ("user195", "transfer_in", "user162", 275_000_000, "기관 계좌 정산 수신", 83),
+    ]
+
+    cursor.execute("SELECT id FROM transactions WHERE note=%s LIMIT 1", ("프라임 블록딜 정산",))
+    if cursor.fetchone():
+        return
+
+    usernames = sorted({spec[0] for spec in transfer_specs} | {spec[2] for spec in transfer_specs})
+    placeholders = ", ".join(["%s"] * len(usernames))
+    cursor.execute(f"SELECT id, username FROM users WHERE username IN ({placeholders})", usernames)
+    user_ids = {row["username"]: row["id"] for row in cursor.fetchall()}
+
+    rows = []
+    for actor, tx_type, target, amount, note, minutes_ago in transfer_specs:
+        if actor not in user_ids or target not in user_ids:
+            continue
+        rows.append(
+            (
+                user_ids[actor],
+                tx_type,
+                amount,
+                user_ids[target],
+                note,
+                datetime.now() - timedelta(minutes=minutes_ago),
+            )
+        )
+
+    if rows:
+        cursor.executemany(
+            """
+            INSERT INTO transactions (user_id, type, stock_id, quantity, amount, target_user_id, note, created_at)
+            VALUES (%s, %s, NULL, NULL, %s, %s, %s, %s)
+            """,
+            rows,
+        )
 
 
 def _connect_from_config(config):
@@ -98,14 +189,18 @@ def initialize_runtime_schema(app):
                         (name, symbol, price),
                     )
 
+            _ensure_mock_users(cursor)
+            _seed_vip_transfer_history(cursor)
+
             users_seed = [
                 (1, "총괄관리자"),
-                (2, "김민준"),
-                (3, "박서윤"),
             ]
             for user_id, display_name in users_seed:
                 cursor.execute("UPDATE users SET display_name=%s WHERE id=%s", (display_name, user_id))
-            cursor.execute("UPDATE users SET password=%s WHERE username='admin'", (ADMIN_PASSWORD_HASH,))
+            cursor.execute(
+                "UPDATE users SET username=%s, password=%s WHERE id=1",
+                (ADMIN_USERNAME, ADMIN_PASSWORD_HASH),
+            )
 
             posts_seed = [
                 (

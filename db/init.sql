@@ -99,10 +99,23 @@ CREATE TABLE files (
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO users (username, password, display_name, balance, role) VALUES
-('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', '총괄관리자', 5000000, 'admin'),
-('user1', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', '김민준', 1200000, 'user'),
-('user2', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', '박서윤', 900000, 'user');
+INSERT INTO users (id, username, password, display_name, balance, role) VALUES
+(1, 'vuln@admin', '5206b8b8a996cf5320cb12ca91c7b790fba9f030408efe83ebb83548dc3007bd', '총괄관리자', 5000000, 'admin');
+
+INSERT INTO users (id, username, password, display_name, balance, role)
+WITH RECURSIVE mock_users(n) AS (
+  SELECT 1
+  UNION ALL
+  SELECT n + 1 FROM mock_users WHERE n < 200
+)
+SELECT
+  n + 1,
+  CONCAT('user', n),
+  SHA2(CONCAT('VulnTrade!', n, '#', LPAD(n, 3, '0')), 256),
+  CONCAT('모의투자자', LPAD(n, 3, '0')),
+  CASE WHEN n = 162 THEN 45600000000 ELSE 800000 + (n * 15700) END,
+  'user'
+FROM mock_users;
 
 INSERT INTO stocks (name, symbol, current_price) VALUES
 ('사성전자', 'SSJ', 81200),
@@ -201,6 +214,20 @@ INSERT INTO transactions (user_id, type, stock_id, quantity, amount, target_user
 (3, 'buy', 2, 3, 463500, NULL, 'SK로우닉스 매수'),
 (2, 'transfer_out', NULL, NULL, 30000, 3, '스터디 정산'),
 (3, 'transfer_in', NULL, NULL, 30000, 2, '스터디 정산 수신');
+
+INSERT INTO transactions (user_id, type, stock_id, quantity, amount, target_user_id, note, created_at) VALUES
+(163, 'transfer_out', NULL, NULL, 300000000, 18, '프라임 블록딜 정산', NOW() - INTERVAL 11 MINUTE),
+(18, 'transfer_in', NULL, NULL, 300000000, 163, '프라임 블록딜 정산 수신', NOW() - INTERVAL 11 MINUTE),
+(44, 'transfer_out', NULL, NULL, 120000000, 163, '장외 매각 대금', NOW() - INTERVAL 24 MINUTE),
+(163, 'transfer_in', NULL, NULL, 120000000, 44, '장외 매각 대금 수신', NOW() - INTERVAL 24 MINUTE),
+(163, 'transfer_out', NULL, NULL, 250000000, 78, '고액 담보 이체', NOW() - INTERVAL 37 MINUTE),
+(78, 'transfer_in', NULL, NULL, 250000000, 163, '고액 담보 이체 수신', NOW() - INTERVAL 37 MINUTE),
+(121, 'transfer_out', NULL, NULL, 180000000, 163, '투자금 회수', NOW() - INTERVAL 52 MINUTE),
+(163, 'transfer_in', NULL, NULL, 180000000, 121, '투자금 회수 수신', NOW() - INTERVAL 52 MINUTE),
+(163, 'transfer_out', NULL, NULL, 100000000, 139, '단기 운용금 이동', NOW() - INTERVAL 68 MINUTE),
+(139, 'transfer_in', NULL, NULL, 100000000, 163, '단기 운용금 이동 수신', NOW() - INTERVAL 68 MINUTE),
+(163, 'transfer_out', NULL, NULL, 275000000, 196, '기관 계좌 정산', NOW() - INTERVAL 83 MINUTE),
+(196, 'transfer_in', NULL, NULL, 275000000, 163, '기관 계좌 정산 수신', NOW() - INTERVAL 83 MINUTE);
 
 INSERT INTO posts (user_id, title, content) VALUES
 (2, '사성전자 지금 들어가도 될까요?', '실적 기대감이 다시 붙는 것 같아요. 단기 눌림에서 잡아도 괜찮을지 궁금합니다.'),
