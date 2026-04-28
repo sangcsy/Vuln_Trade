@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
 <article class="card post-detail">
@@ -10,9 +10,9 @@
     </div>
     {% if current_user and current_user.id == post.user_id %}
       <div class="action-row">
-        <a class="button primary inline-btn action-chip" href="{{ url_for('community.edit', post_id=post.id) }}">수정</a>
+        <a class="button primary inline-btn action-chip" href="{{ url_for('community.edit', post_id=post.id) }}">Edit</a>
         <form method="post" action="{{ url_for('community.delete', post_id=post.id) }}">
-          <button type="submit" class="button dark inline-btn action-chip">삭제</button>
+          <button type="submit" class="button dark inline-btn action-chip">Delete</button>
         </form>
       </div>
     {% endif %}
@@ -22,14 +22,25 @@
   {% if files %}
     <div class="attachment-list">
       {% for file in files %}
-        <a href="{{ url_for('community.download', name=file.stored_name) }}">{{ file.original_name }}</a>
+        <div class="attachment-item">
+          <a href="{{ url_for('community.download', name=file.stored_name) }}">{{ file.original_name }}</a>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="attachment-preview-list">
+      {% for file in files %}
+        <img
+          class="attachment-preview"
+          src="{{ url_for('community.preview_file', name=file.stored_name) }}"
+          alt="{{ file.original_name }}"
+        >
       {% endfor %}
     </div>
   {% endif %}
 </article>
 
 <section class="card">
-  <h2>댓글</h2>
+  <h2>Comments</h2>
   <div class="comment-list">
     {% for comment in comments %}
       <div class="comment-item">
@@ -37,13 +48,13 @@
         <div class="content-body">{{ comment.content|safe }}</div>
       </div>
     {% else %}
-      <p class="empty">아직 댓글이 없습니다.</p>
+      <p class="empty">No comments yet.</p>
     {% endfor %}
   </div>
   {% if current_user %}
     <form method="post" action="{{ url_for('community.write_comment', post_id=post.id) }}" class="form-card compact">
-      <textarea name="content" rows="4" placeholder="생각을 남겨보세요."></textarea>
-      <button type="submit" class="button primary">댓글 등록</button>
+      <textarea name="content" rows="4" placeholder="Leave a comment."></textarea>
+      <button type="submit" class="button primary">Submit</button>
     </form>
   {% endif %}
 </section>

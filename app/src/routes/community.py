@@ -173,3 +173,19 @@ def download():
         return redirect(url_for("community.list_posts"))
 
     return send_file(real_path, as_attachment=True, download_name=os.path.basename(filename))
+
+
+@community_bp.route("/file/preview")
+@login_required
+def preview_file():
+    filename = request.args.get("name")
+    if not filename:
+        flash("File not found.", "error")
+        return redirect(url_for("community.list_posts"))
+
+    real_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+    if not os.path.exists(real_path):
+        flash("File not found.", "error")
+        return redirect(url_for("community.list_posts"))
+
+    return send_file(real_path, as_attachment=False, download_name=os.path.basename(filename))
