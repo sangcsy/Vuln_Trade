@@ -17,7 +17,7 @@ def login_required(view):
 def admin_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
-        if session.get("role") != "admin":
+        if session.get("role") != "admin" or not session.get("admin_authenticated"):
             flash("관리자 로그인이 필요합니다.", "error")
             return redirect(url_for("auth.admin_login", next=request.url))
         return view(*args, **kwargs)

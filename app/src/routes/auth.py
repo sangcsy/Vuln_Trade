@@ -52,9 +52,14 @@ def login():
             cursor.execute(query)
             user = cursor.fetchone()
 
+        if user and user["role"] == "admin" and verify_password(password, user["password"]):
+            flash("관리자 계정은 관리자 로그인 페이지를 이용해 주세요.", "error")
+            return render_template("auth/login.html")
+
         if user and verify_password(password, user["password"]):
             session["user_id"] = user["id"]
             session["role"] = user["role"]
+            session.pop("admin_authenticated", None)
             flash("로그인되었습니다.", "success")
             return redirect(url_for("main.index"))
 
@@ -80,6 +85,7 @@ def admin_login():
         if user and user["role"] == "admin" and verify_password(password, user["password"]):
             session["user_id"] = user["id"]
             session["role"] = user["role"]
+            session["admin_authenticated"] = True
             flash("관리자 인증이 완료되었습니다.", "success")
             return redirect(next_url)
 
