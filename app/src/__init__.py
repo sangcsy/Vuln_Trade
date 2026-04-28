@@ -30,6 +30,6 @@ def create_app():
     app.register_blueprint(stocks_bp, url_prefix="/stocks")
     app.register_blueprint(wallet_bp, url_prefix="/wallet")
     app.register_blueprint(community_bp, url_prefix="/community")
-    app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(admin_bp, url_prefix="/vuln_admin")
 
     return app

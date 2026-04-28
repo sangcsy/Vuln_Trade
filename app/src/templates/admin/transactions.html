@@ -28,11 +28,17 @@
       {% else %}
       <p>{{ tx.actor_name or '-' }} → {{ tx.target_name or '-' }}</p>
       {% endif %}
-      <div class="meta-row">
-        <span>{{ tx.symbol or '-' }}</span>
-        <span>{{ tx.quantity or '-' }}</span>
-        <span>{{ "{:,}".format(tx.amount) }}원</span>
-      </div>
+      {% if tx.type in ('buy', 'sell') %}
+        <div class="meta-row">
+          <span>{{ tx.symbol or '-' }}</span>
+          <span>{{ tx.quantity or '-' }}주</span>
+          <span>{{ "{:,}".format(tx.amount) }}원</span>
+        </div>
+      {% else %}
+        <div class="meta-row">
+          <span>{{ "{:,}".format(tx.amount) }}원</span>
+        </div>
+      {% endif %}
       {% if tx.note %}
       <p class="subtle">{{ tx.note }}</p>
       {% endif %}
