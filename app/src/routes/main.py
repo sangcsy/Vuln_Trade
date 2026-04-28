@@ -24,8 +24,8 @@ def transaction_label(tx_type):
     return {
         "buy": "매수",
         "sell": "매도",
-        "transfer_in": "송금 입금",
-        "transfer_out": "송금",
+        "transfer_in": "입금",
+        "transfer_out": "출금",
     }.get(tx_type, tx_type)
 
 

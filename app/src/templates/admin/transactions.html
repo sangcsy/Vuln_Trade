@@ -12,9 +12,9 @@
     {% if tx.type in ('buy', 'sell') %}
       {% set type_span %}<span class="mypage-trade-badge {{ tx.type }}">{{ '매수' if tx.type == 'buy' else '매도' }}</span>{% endset %}
     {% elif tx.type == 'transfer_in' %}
-      {% set type_span %}<span class="mypage-transfer-badge transfer_in">송금 입금</span>{% endset %}
+      {% set type_span %}<span class="mypage-transfer-badge transfer_in">입금</span>{% endset %}
     {% elif tx.type == 'transfer_out' %}
-      {% set type_span %}<span class="mypage-transfer-badge transfer_out">송금</span>{% endset %}
+      {% set type_span %}<span class="mypage-transfer-badge transfer_out">출금</span>{% endset %}
     {% else %}
       {% set type_span %}<span class="mypage-trade-badge">{{ tx.type }}</span>{% endset %}
     {% endif %}
@@ -25,6 +25,10 @@
       </div>
       {% if tx.type in ('buy', 'sell') %}
       <p>{{ tx.actor_name or '-' }}</p>
+      {% elif tx.type == 'transfer_out' %}
+      <p>출금 계정: {{ tx.actor_name or '-' }} → 입금 계정: {{ tx.target_name or '-' }}</p>
+      {% elif tx.type == 'transfer_in' %}
+      <p>입금 계정: {{ tx.actor_name or '-' }} ← 출금 계정: {{ tx.target_name or '-' }}</p>
       {% else %}
       <p>{{ tx.actor_name or '-' }} → {{ tx.target_name or '-' }}</p>
       {% endif %}
