@@ -945,6 +945,18 @@ function initializeMiniCharts() {
   });
 }
 
+function bindSelectableLeaks() {
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-selectable-leak]")) return;
+    event.preventDefault();
+  });
+
+  document.addEventListener("dragstart", (event) => {
+    if (!event.target.closest("[data-selectable-leak]")) return;
+    event.preventDefault();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".flash").forEach((item) => {
     setTimeout(() => {
@@ -958,6 +970,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindMiniRangeControls();
   bindTickerCarousel();
   bindStockNewsTabs();
+  bindSelectableLeaks();
   hydrateHomePreview();
   hydrateDetailChart();
   hydrateMarketSnapshot();

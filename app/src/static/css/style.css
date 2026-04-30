@@ -607,6 +607,9 @@ a {
   line-height: 1.55;
   white-space: normal;
   overflow-wrap: anywhere;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .sparkline {

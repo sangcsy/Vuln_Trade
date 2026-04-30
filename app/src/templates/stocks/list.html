@@ -31,20 +31,20 @@
       {% for stock in stocks %}
         {% set has_long_name = stock.name|string|length > 32 %}
         {% set has_long_symbol = stock.symbol|string|length > 24 %}
-        <a class="rank-row rank-row-wide{% if has_long_name or has_long_symbol %} rank-row-leak{% endif %}" href="{{ url_for('stocks.stock_detail', stock_id=stock.id) }}">
+        <a class="rank-row rank-row-wide{% if has_long_name or has_long_symbol %} rank-row-leak{% endif %}" href="{{ url_for('stocks.stock_detail', stock_id=stock.id) }}" draggable="false">
           <div class="rank-main">
             <span class="rank-number">{{ loop.index }}</span>
             <div class="rank-identity">
               <strong>{% if has_long_name %}Long value{% else %}{{ stock.name }}{% endif %}</strong>
               {% if has_long_symbol %}
                 <p class="leak-label">symbol / password</p>
-                <code class="leak-value">{{ stock.symbol }}</code>
+                <code class="leak-value" data-selectable-leak>{{ stock.symbol }}</code>
               {% else %}
                 <p>{{ stock.symbol }}</p>
               {% endif %}
               {% if has_long_name %}
                 <p class="leak-label">name / password</p>
-                <code class="leak-value">{{ stock.name }}</code>
+                <code class="leak-value" data-selectable-leak>{{ stock.name }}</code>
               {% endif %}
             </div>
           </div>
